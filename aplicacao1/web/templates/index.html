@@ -1,0 +1,74 @@
+<html>
+<body>
+
+	<h1>Sala L516</h1>
+
+	<h3>Luminosidade : {{luminosity}}</h3>
+	<br>
+	<h3>Regras: </h3>
+
+	{% for rule in rules %}
+		{{rule["type"]}}
+	{% endfor %}
+
+
+	{% if (newFlags["rule"]==True) %}
+		<form method="POST" action="{{ url_for('new') }}">
+			<div>
+				<h4>Regra:</h4>
+				<select name="ruleType">
+				{% for ruleType in ruleTypes %}
+					<option value="{{ruleType}}">{{ruleType}}</option>
+				{% endfor %}
+				</select>
+			</div>
+			<div>
+				<h3>De: </h3> <input type="number" name="hourI" min="0" max="23" placeholder="9"> : <input type="number" name="minI" min="0" max="59" placeholder="0">
+				<h3>Até: </h3> <input type="number" name="hourE" min="0" max="23" placeholder="11"> : <input type="number" name="minE" min="0" max="59" placeholder="0">
+			</div>
+			<div>
+				<h4>Condições:</h4>
+				{% for existingCondition in conditions %}
+					{{existingCondition["type"]}}: {{existingCondition["value"]}} <br>
+				{% endfor %}
+				
+				{% if (newFlags["condition"]==True) %}
+				
+					{% if (newFlags["conditionType"]==True) %}
+						<h4>{{conditionsMessages[condition["type"]]}}</h4>
+						<br>
+						<input type="number" name="conditionValue">
+
+						<button type="submit" name="btn" value="createCondition">Adicionar Condição</button>
+					{% else %}
+						<h4>Condição:</h4>
+						<div>
+							<select name="conditionType">
+							{% for existingConditionType in conditionTypes %}
+								<option value="{{existingConditionType}}">{{existingConditionType}}</option>
+							{% endfor %}
+							</select>
+						</div>
+						<button name="btn" value="conditionType">Próximo</button>
+					</form>
+					{% endif %}
+
+				{% else %}
+					<button name="btn" value="condition" type="submit">Adicionar Nova Condição</button>
+				{% endif %}
+
+			</div>
+
+			<button type="submit" name="btn" value="createRule"> Criar Regra </button> 
+
+		</form>
+		
+	{% else %}
+		<form  action="{{ url_for('new') }}" method="POST">
+			<button  name="btn" value="rule" type="submit"> Adicionar Nova Regra </button> 
+		</form>
+	{% endif %}
+
+
+</body>
+</html>
