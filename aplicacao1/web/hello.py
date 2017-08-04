@@ -53,7 +53,7 @@ newFlags["conditionType"]=False
 
 @app.route('/')
 def hello_world():
-    return render_template('index.html', async_mode=socketio.async_mode, luminosity=luminosity,newFlags=newFlags,ruleTypes=ruleTypes,conditionTypes=conditionTypes,conditionsMessages=conditionsMessages,condition=condition,conditions=conditions,rules=rules)
+    return render_template('index.html', async_mode=socketio.async_mode, newFlags=newFlags,ruleTypes=ruleTypes,conditionTypes=conditionTypes,conditionsMessages=conditionsMessages,condition=condition,conditions=conditions,rules=rules)
 
 @app.route('/new/',methods=['GET', 'POST'])
 def new():
@@ -74,7 +74,7 @@ def new():
 	if(btn == "createRule"):
 		rules.append(copy.copy(newRule))
 
-	return render_template('index.html',async_mode=socketio.async_mode,luminosity=luminosity,newFlags=newFlags,ruleTypes=ruleTypes,conditionTypes=conditionTypes,conditionsMessages=conditionsMessages,condition=condition,conditions=conditions,rules=rules)
+	return render_template('index.html',async_mode=socketio.async_mode,newFlags=newFlags,ruleTypes=ruleTypes,conditionTypes=conditionTypes,conditionsMessages=conditionsMessages,condition=condition,conditions=conditions,rules=rules)
 
 @socketio.on('my event')
 def handle_my_custom_event(json):
