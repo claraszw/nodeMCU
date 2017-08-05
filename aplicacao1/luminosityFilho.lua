@@ -2,7 +2,7 @@
 
 NODE_ID = 1
 MQTT_PORT = 1883
-MQTT_HOST = "192.168.0.8"
+MQTT_HOST = "192.168.1.11"
 delay = 10000000 --ms
 
 send = true
@@ -11,11 +11,11 @@ retry = true
 function configWifi()
 	-- Configure Wi-Fi
 	wifi.setmode(wifi.STATION)
-	wifi.sta.config("piocorreia","wfpcapto41")
+	wifi.sta.config("sadock","esquilovoador")
 
 	while ip == nil do
 		wifi.sta.connect()
-		print("Connecting to piocorreia")
+		print("Connecting to sadock")
     	ip = wifi.sta.getip()
     	tmr.delay(3000000)
     end

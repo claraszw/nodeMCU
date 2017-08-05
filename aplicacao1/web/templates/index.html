@@ -47,7 +47,7 @@
 				<h4>Regra:</h4>
 				<select name="ruleType">
 				{% for ruleType in ruleTypes %}
-					<option value="{{ruleType}}">{{ruleType}}</option>
+					<option value="{{ruleType['value']}}">{{ruleType["label"]}}</option>
 				{% endfor %}
 				</select>
 			</div>
@@ -74,7 +74,7 @@
 						<div>
 							<select name="conditionType">
 							{% for existingConditionType in conditionTypes %}
-								<option value="{{existingConditionType}}">{{existingConditionType}}</option>
+								<option value="{{existingConditionType['value']}}">{{existingConditionType["label"]}}</option>
 							{% endfor %}
 							</select>
 						</div>

@@ -1,22 +1,22 @@
 
 
 MQTT_PORT = 1883
-MQTT_HOST = "192.168.0.8"
+MQTT_HOST = "192.168.1.11"
 delay = 10000000 --ms
 
 retry=true
 
-activeRules = { lightsOn= { upperBound= 500 } }
+activeRules = {}
 
 
 function configWifi()
 	-- Configure Wi-Fi
 	wifi.setmode(wifi.STATION)
-	wifi.sta.config("piocorreia","wfpcapto41")
+	wifi.sta.config("sadock","esquilovoador")
 
 	while ip == nil do
 		wifi.sta.connect()
-		print("Connecting to piocorreia")
+		print("Connecting to sadock")
     	ip = wifi.sta.getip()
     	tmr.delay(3000000)
     end
@@ -28,7 +28,7 @@ function mqttConnect()
 	mqttClient:connect(MQTT_HOST,MQTT_PORT,0,0, function(con)
     		print('Connected to broker')
             mqttRegister('luminosity')
-            mqttRegister('control')
+            mqttRegister('newRule')
     		end, function(con,reason) 
     		-- gpio.mode(ledErrorPin, gpio.OUTPUT)
     		print("Couldn't connect to broker: ".. reason)
@@ -98,14 +98,32 @@ function messageReceived(topic,data)
 		else
 			print("Nothing Happens")
 		end
-
+	elseif (topic == 'newRule') then
+		message = loadstring('return'..data)()
+		table.insert(activeRules,message)
 	elseif (topic == 'control') then
 		if(data == "quit") then
 			mqttPublish('control1','quit')
 		end
 	end
 
+	if(activeRules["lightsOn"] ~= nil) then
+		if(luminosityValue < activeRules['lightsOn'].lowerBound) then
+			print("Lights On!")
+		else
+			print("Nothing Happens")
+		end
+	end
+
+
+	-- for rule,parameters in pairs(activeRules) do
+
+
 end
+
+-- function checkParameter(rule,parameterType,value)
+-- 	if(parameterType == upperBound)
+-- end
 
 function init()
 

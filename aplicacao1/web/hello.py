@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect
 from flask_socketio import SocketIO, emit
+import paho.mqtt.client as mqtt
 import copy
 app = Flask(__name__)
 
@@ -20,6 +21,7 @@ def on_message(client, userdata, message):
     #socketio.emit('my variable')
     print("Received message '" + str(message.payload) + "' on topic '"
         + message.topic + "' with QoS " + str(message.qos))
+
     if message.topic == "luminosity":
         print("luminosity update")
         socketio.emit('luminosity', {'data': message.payload})
@@ -32,14 +34,14 @@ mqttc.loop_start()
 
 
 
-ruleTypes = ["Acender Luzes", "Apaga Luzes"]
+ruleTypes = [{'label': "Acender Luzes", 'value': "lightsOn"}, {'label': "Apaga Luzes", 'value': "lightsOff" } ]
 
-conditionTypes = ["Luminosidade Minima","Luminosidade Maxima"]
+conditionTypes = [{'label': "Luminosidade Minima", 'value': "lowerBound"},{'label': "Luminosidade Maxima", 'value': "upperBound"}]
 conditionsMessages = {}
 conditionsMessages["Luminosidade Minima"] = "Luminosidade Acima De: "
 conditionsMessages["Luminosidade Maxima"] = "Luminosidade Abaixo De: "
 condition = {}
-conditions = [{'value':"abobrinha",'type':"teste"}]
+conditions = []
 
 rules = []
 
@@ -59,6 +61,7 @@ def hello_world():
 def new():
 
 	btn = request.form['btn']
+
 	if(btn=="condition" or btn=="conditionType" or btn=="rule"):
 		newFlags[btn]  = True
 
@@ -72,7 +75,17 @@ def new():
 		newFlags["conditionType"]=False
 
 	if(btn == "createRule"):
+		newRule["type"] = request.form.get('ruleType')
+		newRule["parameters"] = copy.copy(conditions)
 		rules.append(copy.copy(newRule))
+
+		ruleString = "{" + str(newRule["type"]) + " = {"
+
+		for parameter in newRule["parameters"]:
+			ruleString = ruleString + str(parameter["type"]) + "=" + str(parameter["value"]) + ","
+
+		ruleString = ruleString + "}"
+		mqttc.publish('newRule',ruleString)
 
 	return render_template('index.html',async_mode=socketio.async_mode,newFlags=newFlags,ruleTypes=ruleTypes,conditionTypes=conditionTypes,conditionsMessages=conditionsMessages,condition=condition,conditions=conditions,rules=rules)
 
