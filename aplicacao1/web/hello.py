@@ -79,7 +79,7 @@ def new():
 		newRule["parameters"] = copy.copy(conditions)
 		rules.append(copy.copy(newRule))
 
-		ruleString = "{" + str(newRule["type"]) + " = {"
+		ruleString = str(newRule["type"]) + " = {"
 
 		for parameter in newRule["parameters"]:
 			ruleString = ruleString + str(parameter["type"]) + "=" + str(parameter["value"]) + ","
