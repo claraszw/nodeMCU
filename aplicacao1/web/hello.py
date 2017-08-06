@@ -14,7 +14,7 @@ def on_connect(client, userdata, flags, rc):
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    client.subscribe("luminosity")
+    client.subscribe("luminosityUpdt")
 
 # The callback for when a PUBLISH message is received from the ESP8266.
 def on_message(client, userdata, message):
@@ -22,7 +22,7 @@ def on_message(client, userdata, message):
     print("Received message '" + str(message.payload) + "' on topic '"
         + message.topic + "' with QoS " + str(message.qos))
 
-    if message.topic == "luminosity":
+    if message.topic == "luminosityUpdt":
         print("luminosity update")
         socketio.emit('luminosity', {'data': message.payload})
 
@@ -79,12 +79,12 @@ def new():
 		newRule["parameters"] = copy.copy(conditions)
 		rules.append(copy.copy(newRule))
 
-		ruleString = str(newRule["type"]) + " = {"
+		ruleString = " { type = ' " + str(newRule["type"]) + " ', parameters = {"
 
 		for parameter in newRule["parameters"]:
 			ruleString = ruleString + str(parameter["type"]) + "=" + str(parameter["value"]) + ","
 
-		ruleString = ruleString + "}"
+		ruleString = ruleString + "} }"
 		mqttc.publish('newRule',ruleString)
 
 	return render_template('index.html',async_mode=socketio.async_mode,newFlags=newFlags,ruleTypes=ruleTypes,conditionTypes=conditionTypes,conditionsMessages=conditionsMessages,condition=condition,conditions=conditions,rules=rules)
