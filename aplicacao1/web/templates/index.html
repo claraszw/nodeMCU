@@ -3,9 +3,10 @@
 <head>
    <title>RPi Web Server</title>
    <!-- Latest compiled and minified CSS -->
-   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
-   <!-- Optional theme -->
-   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+   <link rel= "stylesheet" type= "text/css" href="{{ url_for('static', filename='style.css')}}">
+   <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+   Optional theme
+   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous"> -->
    <!-- Latest compiled and minified JavaScript -->
    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
    <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
@@ -15,7 +16,7 @@
       $(document).ready(function() {
         var socket = io.connect('http://' + document.domain + ':' + location.port);
         socket.on('connect', function() {
-          socket.emit('my event', {data: 'I\'m connected!'});
+          socket.emit('my event', {data: 'I\'m connected!!!!'});
         });
         socket.on('luminosity', function(msg) {
           var nDate = new Date();
@@ -24,7 +25,23 @@
           $('#luminosity').text(msg.data).html();
         });
       });
+
+      var threshold = 10
+
+      function test (){
+
+      	document.getElementById("newRuleDiv").style.visibility = 'hidden'
+      	// console.log("Received: " + value)
+
+      	// if(value.data < threshold){
+      	// 	alert("Please choose a different value!")	
+      	// }
+      	
+      	// alert("Done")
+      }
+
    </script>
+   <!-- <script src="{{url_for('static', filename='updates.js')}}"></script> -->
 </head>
 
 
@@ -32,72 +49,106 @@
 
 	<h1>Sala L516</h1>
 
-	<h3>Luminosidade : <span id="luminosity"></span></h3>
+	<h3>Luminosidade : <span id="luminosity">{{luminosity}}</span></h3>
+
 	<br>
 	<h3>Regras: </h3>
 
+	{% if rules|length == 0 %}
+		<span class="empty-label">Não há Regras</span>
+	{% endif %}
+
+	<ul>
+
 	{% for rule in rules %}
-		{{rule["type"]}}
+		<div class="rules">
+			<span>
+				<li>{{rule["type"]["label"]}}</li>
+				<ul>
+					{% for parameter in rule["parameters"] %}
+					<li>{{parameter["label"]}}: {{parameter["value"]}}</li>
+					{% endfor %}
+				</ul>
+			</span>
+			<form method = "POST" action="{{url_for('deleteRule')}}">
+				<button name="btn" value="{{rule}}" class="button-delete">Excluir</button>
+			</form>
+		</div>
 	{% endfor %}
+	</ul>
 
+	<div id="teste">Hello</div>
 
-	{% if (newFlags["rule"]==True) %}
 		<form method="POST" action="{{ url_for('new') }}">
-			<div>
-				<h4>Regra:</h4>
-				<select name="ruleType">
+
+			<div class="newRule" id="newRuleDiv">
+				<span>Regra: 
+				<!-- <select name="ruleType">
 				{% for ruleType in ruleTypes %}
-					<option value="{{ruleType['value']}}">{{ruleType["label"]}}</option>
+					<option value="{{ ruleType }}">{{ruleType["label"]}}</option>
 				{% endfor %}
-				</select>
+				</select> --></span>
 			</div>
-			<div>
-				<h3>De: </h3> <input type="number" name="hourI" min="0" max="23" placeholder="9"> : <input type="number" name="minI" min="0" max="59" placeholder="0">
-				<h3>Até: </h3> <input type="number" name="hourE" min="0" max="23" placeholder="11"> : <input type="number" name="minE" min="0" max="59" placeholder="0">
+			<div class="hour">
+				<span>De   :   <input class="hour-input" type="text" name="hourI" placeholder="09" pattern="[0-9]{2}"> : <input class="hour-input" type="text" name="minI" placeholder="00" pattern="[0-9]{2}" >
+				<br> 
+				<span>Até: <input class="hour-input" type="text" name="hourE" pattern="[0-9]{2}" placeholder="11"> : <input class="hour-input" type="text" name="minE" pattern="[0-9]{2}" placeholder="00" > </span>
 			</div>
-			<div>
+			<div class="conditions">
+
 				<h4>Condições:</h4>
+
+				{% if conditions|length == 0 %}
+					<span class="empty-label">Não há Condições</span>
+				{% endif %}
+
+				<ul>
 				{% for existingCondition in conditions %}
-					{{existingCondition["type"]}}: {{existingCondition["value"]}} <br>
+					<li>{{existingCondition["label"]}}: {{existingCondition["value"]}}</li>
 				{% endfor %}
+				</ul>
 				
 				{% if (newFlags["condition"]==True) %}
 				
 					{% if (newFlags["conditionType"]==True) %}
-						<h4>{{conditionsMessages[condition["type"]]}}</h4>
-						<br>
+						<div> {{conditionsMessages[condition["type"]]}}
 						<input type="number" name="conditionValue">
-
-						<button type="submit" name="btn" value="createCondition">Adicionar Condição</button>
-					{% else %}
-						<h4>Condição:</h4>
-						<div>
-							<select name="conditionType">
-							{% for existingConditionType in conditionTypes %}
-								<option value="{{existingConditionType['value']}}">{{existingConditionType["label"]}}</option>
-							{% endfor %}
-							</select>
+						<br>
 						</div>
-						<button name="btn" value="conditionType">Próximo</button>
+						<button class="button-newCondition-back" name="btn" value="conditionValueBack">Voltar</button>
+						<button class="button-newCondition" type="submit" name="btn" value="createCondition">Adicionar Condição</button>
+					{% else %}
+						<div class="newConditions">
+							<span>Condição: 
+								<select name="conditionType">
+								{% for existingConditionType in conditionTypes %}
+									<option value="{{existingConditionType}}">{{existingConditionType["label"]}}</option>
+								{% endfor %}
+								</select>
+							</span>
+						</div>
+							<button class="button-newCondition-back" name="btn" value="conditionTypeBack">Voltar</button>
+							<button class="button-newCondition-next" name="btn" value="conditionType">Próximo</button>
+						
 					</form>
 					{% endif %}
 
 				{% else %}
-					<button name="btn" value="condition" type="submit">Adicionar Nova Condição</button>
+					<br>
+					<button class="button-newCondition" name="btn" value="condition" type="submit">Adicionar Nova Condição</button>
 				{% endif %}
 
 			</div>
 
+			<button type="submit" name="btn" value="cancelCreateRule"> Cancelar </button> 
 			<button type="submit" name="btn" value="createRule"> Criar Regra </button> 
 
 		</form>
 		
-	{% else %}
-		<form  action="{{ url_for('new') }}" method="POST">
-			<button  name="btn" value="rule" type="submit"> Adicionar Nova Regra </button> 
-		</form>
-	{% endif %}
-
+		<!-- <form  action="{{ url_for('new') }}" method="POST"> -->
+		{{conditionTypes[0]['label']}}
+			<button  class="button-newRule" name="btn" value="rule" onclick="test()"> Adicionar Nova Regra </button> 
+		<!-- </form> -->
 
 </body>
 </html>

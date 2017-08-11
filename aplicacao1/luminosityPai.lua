@@ -1,7 +1,7 @@
 
 
 MQTT_PORT = 1883
-MQTT_HOST = "192.168.1.11"
+MQTT_HOST = "192.168.0.7"
 delay = 10000000 --ms
 
 retry=true
@@ -12,13 +12,13 @@ activeRules = {}
 function configWifi()
 	-- Configure Wi-Fi
 	wifi.setmode(wifi.STATION)
-	wifi.sta.config("sadock","esquilovoador")
+	wifi.sta.config("piocorreia","wfpcapto41")
 
 	while ip == nil do
 		wifi.sta.connect()
-		print("Connecting to sadock")
+		print("Connecting to piocorreia")
     	ip = wifi.sta.getip()
-    	tmr.delay(3000000)
+    	tmr.delay(5000000)
     end
 	print("IP is ".. ip)
 end
@@ -93,37 +93,72 @@ function messageReceived(topic,data)
         luminosityValue = message.data
 		print('Received luminosity value: '.. message['data'] .. 'from: '..message['source'])
 
-		if(luminosityValue < activeRules['lightsOn'].upperBound) then
-			print("Lights On!")
-		else
-			print("Nothing Happens")
-		end
+		mqttPublish('luminosityUpdt',luminosityValue)
+
+
 	elseif (topic == 'newRule') then
 		message = loadstring('return'..data)()
-		table.insert(activeRules,message)
+
+		activeRules[message["type"]["value"]] = message["parameters"]
+
+
 	elseif (topic == 'control') then
 		if(data == "quit") then
 			mqttPublish('control1','quit')
 		end
 	end
 
-	if(activeRules["lightsOn"] ~= nil) then
-		if(luminosityValue < activeRules['lightsOn'].lowerBound) then
-			print("Lights On!")
-		else
-			print("Nothing Happens")
+
+	for rule,parameters in pairs(activeRules) do
+        print(rule)
+		act = true
+
+		for parameter,value in pairs(parameters) do
+		  if(not checkParameter(parameter,value)) then
+		  	act = false
+		  	break;
+		  end
 		end
+
+		if(act) then
+			applyRule(rule)
+		end
+
 	end
-
-
-	-- for rule,parameters in pairs(activeRules) do
-
 
 end
 
--- function checkParameter(rule,parameterType,value)
--- 	if(parameterType == upperBound)
--- end
+function checkParameter(parameterType,value)
+
+	if(parameterType == "upperBoundLight") then
+		if (luminosityValue > value) then
+			return true
+		else
+			return false
+		end
+
+	elseif(parameterType == "lowerBoundLight") then
+		if (luminosityValue < value) then
+        print("value is smaller")
+			return true
+		else
+			return false
+		end
+	end
+
+end
+
+function applyRule(rule)
+
+print("Applying rule: "..rule)
+
+	if(rule == "lightsOn") then
+		print("Acender Luzes!")
+	elseif (rule == "lightsOff") then
+		print("Apagar Luzes!")
+	end
+
+end
 
 function init()
 

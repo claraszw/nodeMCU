@@ -1,0 +1,53 @@
+body { 
+
+	font-family: sans-serif;
+	background: #fff;
+
+	margin: 2.5%;
+ }
+
+ .rules{
+ 	display: flex;
+ }
+
+ .hour {
+
+ 	padding-top: 1.5%;
+ 	padding-bottom: 1.5%;
+
+ }
+
+.hour-input {
+	width: 40px;
+}
+
+.empty-label{
+	font-style: italic;
+	color: gray;
+	padding-left: 1%;
+}
+
+/*.newRuleDiv{
+	display: none;
+	padding-top: 2%;
+}*/
+
+.conditions{
+	padding-bottom: 2%;
+}
+
+.button-newRule{
+	margin-left: 1%;
+}
+
+.button-newCondition-back, .button-newCondition-next{
+	margin-top: 1%;
+}
+
+.button-newCondition-back {
+	margin-left: 1%;
+}
+
+.button-delete{
+	margin-left: 1%;
+}

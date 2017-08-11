@@ -121,7 +121,6 @@ function collectData()
 
 	end
 
-	print('DONE')
 end
 
 function messageReceived(topic,data)

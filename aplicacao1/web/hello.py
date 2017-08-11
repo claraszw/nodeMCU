@@ -1,7 +1,7 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, url_for
 from flask_socketio import SocketIO, emit
 import paho.mqtt.client as mqtt
-import copy
+import copy, ast
 app = Flask(__name__)
 
 
@@ -24,7 +24,9 @@ def on_message(client, userdata, message):
 
     if message.topic == "luminosityUpdt":
         print("luminosity update")
+        luminosityUpdt["value"] = message.payload;
         socketio.emit('luminosity', {'data': message.payload})
+
 
 mqttc=mqtt.Client()
 mqttc.on_connect = on_connect
@@ -34,12 +36,12 @@ mqttc.loop_start()
 
 
 
-ruleTypes = [{'label': "Acender Luzes", 'value': "lightsOn"}, {'label': "Apaga Luzes", 'value': "lightsOff" } ]
+ruleTypes = [{'label': "Acender Luzes", 'value': "lightsOn"}, {'label': "Apagar Luzes", 'value': "lightsOff" } ]
 
-conditionTypes = [{'label': "Luminosidade Minima", 'value': "lowerBound"},{'label': "Luminosidade Maxima", 'value': "upperBound"}]
+conditionTypes = [{'label': "Luminosidade Abaixo De", 'value': "lowerBoundLight"},{'label': "Luminosidade Acima De", 'value': "upperBoundLight"}]
 conditionsMessages = {}
-conditionsMessages["Luminosidade Minima"] = "Luminosidade Acima De: "
-conditionsMessages["Luminosidade Maxima"] = "Luminosidade Abaixo De: "
+conditionsMessages["lowerBoundLight"] = "Luminosidade Abaixo De "
+conditionsMessages["upperBoundLight"] = "Luminosidade Acima De: "
 condition = {}
 conditions = []
 
@@ -52,10 +54,30 @@ newFlags["rule"]=False
 newFlags["condition"]=False
 newFlags["conditionType"]=False
 
+luminosityUpdt = {}
+luminosityUpdt["value"] = 0
 
+teste = {'data': 5}
+
+
+@app.route('/<luminosity>')
 @app.route('/')
-def hello_world():
-    return render_template('index.html', async_mode=socketio.async_mode, newFlags=newFlags,ruleTypes=ruleTypes,conditionTypes=conditionTypes,conditionsMessages=conditionsMessages,condition=condition,conditions=conditions,rules=rules)
+def hello_world(luminosity=0):
+
+	luminosityUpdt = luminosity
+
+	return render_template('index.html', async_mode=socketio.async_mode, newFlags=newFlags,ruleTypes=ruleTypes,conditionTypes=conditionTypes,conditionsMessages=conditionsMessages,condition=condition,conditions=conditions,rules=rules,luminosity=luminosityUpdt,teste=teste)
+
+@app.route('/deleteRule',methods=['GET', 'POST'])
+def deleteRule():
+
+	 rules.remove(ast.literal_eval(request.form['btn']))
+
+	 if(luminosityUpdt["value"] != 0):
+	 	return redirect(url_for('hello_world',luminosity=luminosityUpdt["value"]))
+	 else:
+		return redirect('/')
+
 
 @app.route('/new/',methods=['GET', 'POST'])
 def new():
@@ -66,7 +88,26 @@ def new():
 		newFlags[btn]  = True
 
 		if(btn == 'conditionType'):
-			condition["type"] = request.form.get('conditionType')
+			condition["label"] = ast.literal_eval(request.form.get('conditionType'))["label"]
+			condition["type"] = ast.literal_eval(request.form.get('conditionType'))["value"]
+
+	if(btn=="conditionTypeBack"):
+		newFlags["condition"]=False
+		newFlags["conditionType"]=False
+
+	if(btn=="conditionValueBack"):
+		newFlags["conditionType"]=False
+
+	if(btn=="cancelCreateRule"):
+
+		newFlags["condition"]=False
+		newFlags["conditionType"]=False
+		newFlags["rule"]=False
+		del conditions[:]
+		if(luminosityUpdt["value"] != 0):
+			return redirect(url_for('hello_world',luminosity=luminosityUpdt["value"]))
+		else:
+			return redirect('/')
 
 	if(btn == "createCondition"):
 		condition["value"] = request.form.get('conditionValue')
@@ -75,23 +116,38 @@ def new():
 		newFlags["conditionType"]=False
 
 	if(btn == "createRule"):
-		newRule["type"] = request.form.get('ruleType')
+		newRule["type"] = ast.literal_eval(request.form.get('ruleType'))
 		newRule["parameters"] = copy.copy(conditions)
 		rules.append(copy.copy(newRule))
 
-		ruleString = " { type = ' " + str(newRule["type"]) + " ', parameters = {"
+		ruleString = " { type = { value ='" + str(newRule["type"]["value"]) + "', label='"+ str(newRule["type"]["label"])+"'}, parameters = {"
 
 		for parameter in newRule["parameters"]:
 			ruleString = ruleString + str(parameter["type"]) + "=" + str(parameter["value"]) + ","
 
 		ruleString = ruleString + "} }"
 		mqttc.publish('newRule',ruleString)
+		
+		del conditions[:]
 
-	return render_template('index.html',async_mode=socketio.async_mode,newFlags=newFlags,ruleTypes=ruleTypes,conditionTypes=conditionTypes,conditionsMessages=conditionsMessages,condition=condition,conditions=conditions,rules=rules)
+		newFlags["condition"]=False
+		newFlags["conditionType"]=False
+		newFlags["rule"]=False
+
+		if(luminosityUpdt["value"] != 0):
+			return redirect(url_for('hello_world',luminosity=luminosityUpdt["value"]))
+		else:
+			return redirect('/')
+
+	return render_template('index.html',async_mode=socketio.async_mode,newFlags=newFlags,ruleTypes=ruleTypes,conditionTypes=conditionTypes,conditionsMessages=conditionsMessages,condition=condition,conditions=conditions,rules=rules,luminosity=luminosityUpdt["value"])
 
 @socketio.on('my event')
 def handle_my_custom_event(json):
     print('received json data here: ' + str(json))
+
+# @socketio.on('delete')
+# def deleteRule (json):
+
 
 
 if __name__ == '__main__':
