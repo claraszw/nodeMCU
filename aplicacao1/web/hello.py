@@ -26,6 +26,7 @@ def on_message(client, userdata, message):
         print("luminosity update")
         luminosityUpdt["value"] = message.payload;
         socketio.emit('luminosity', {'data': message.payload})
+        socketio.emit('testChange', {'data': message.payload})
 
 
 mqttc=mqtt.Client()
@@ -36,37 +37,39 @@ mqttc.loop_start()
 
 
 
-ruleTypes = [{'label': "Acender Luzes", 'value': "lightsOn"}, {'label': "Apagar Luzes", 'value': "lightsOff" } ]
+ruleTypes = {"lightsOn":"Acender Luzes", "lightsOff":"Apagar Luzes"}
+conditionTypes = {"lowerBoundLight": "Luminosidade Abaixo De","upperBoundLight": "Luminosidade Acima De"}
 
-conditionTypes = [{'label': "Luminosidade Abaixo De", 'value': "lowerBoundLight"},{'label': "Luminosidade Acima De", 'value': "upperBoundLight"}]
-conditionsMessages = {}
-conditionsMessages["lowerBoundLight"] = "Luminosidade Abaixo De "
-conditionsMessages["upperBoundLight"] = "Luminosidade Acima De: "
 condition = {}
-conditions = []
+conditions = {"lowerBoundLight": 'None',"upperBoundLight":'None'}
 
 rules = []
 
 newRule = {}
 
-newFlags = {}
-newFlags["rule"]=False
-newFlags["condition"]=False
-newFlags["conditionType"]=False
-
 luminosityUpdt = {}
 luminosityUpdt["value"] = 0
 
-teste = {'data': 5}
+templateData = {
+		'async_mode':socketio.async_mode,
+		'ruleTypes':ruleTypes,
+		'conditionTypes':conditionTypes,
+		'condition':condition,
+		'conditions':conditions,
+		'rules':rules,
+		'luminosity':luminosityUpdt["value"],
+		'state':''
+};
 
-
-@app.route('/<luminosity>')
-@app.route('/')
-def hello_world(luminosity=0):
+@app.route('/<state>/<luminosity>/<rule>/<begin>/<end>', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
+def hello_world(state="init",luminosity=0,data={}):
 
 	luminosityUpdt = luminosity
+	stateUpdt = state
+	dataUpdt = data
 
-	return render_template('index.html', async_mode=socketio.async_mode, newFlags=newFlags,ruleTypes=ruleTypes,conditionTypes=conditionTypes,conditionsMessages=conditionsMessages,condition=condition,conditions=conditions,rules=rules,luminosity=luminosityUpdt,teste=teste)
+	return render_template('index.html',**templateData);
 
 @app.route('/deleteRule',methods=['GET', 'POST'])
 def deleteRule():
@@ -84,70 +87,82 @@ def new():
 
 	btn = request.form['btn']
 
-	if(btn=="condition" or btn=="conditionType" or btn=="rule"):
-		newFlags[btn]  = True
-
-		if(btn == 'conditionType'):
-			condition["label"] = ast.literal_eval(request.form.get('conditionType'))["label"]
-			condition["type"] = ast.literal_eval(request.form.get('conditionType'))["value"]
-
-	if(btn=="conditionTypeBack"):
-		newFlags["condition"]=False
-		newFlags["conditionType"]=False
-
-	if(btn=="conditionValueBack"):
-		newFlags["conditionType"]=False
+	if(btn == 'conditionType'):
+		condition["label"] = ast.literal_eval(request.form.get('conditionType'))["label"]
+		condition["type"] = ast.literal_eval(request.form.get('conditionType'))["value"]
 
 	if(btn=="cancelCreateRule"):
-
-		newFlags["condition"]=False
-		newFlags["conditionType"]=False
-		newFlags["rule"]=False
-		del conditions[:]
-		if(luminosityUpdt["value"] != 0):
-			return redirect(url_for('hello_world',luminosity=luminosityUpdt["value"]))
-		else:
-			return redirect('/')
+		for key,value in conditions.items():
+			conditions[key] = 'None'
+		
+		templateData['state']='init'
+		templateData['luminosity']=luminosityUpdt["value"]
+		
+		return redirect('/')
 
 	if(btn == "createCondition"):
-		condition["value"] = request.form.get('conditionValue')
-		conditions.append(copy.copy(condition))
-		newFlags["condition"]=False
-		newFlags["conditionType"]=False
+		conditionType = request.form.get('conditionType')
+
+		conditions[str(conditionType)] = ast.literal_eval(request.form.get('conditionValue'))
+
+		hourBegin = int(request.form.get('hourI')) 
+		hourEnd = int(request.form.get('hourE')) 
+		minuteBegin = int(request.form.get('minI')) 
+		minuteEnd = int(request.form.get('minE')) 
+
+		newRule["type"] = str(request.form.get('ruleType'))
+
+		timeBegin = hour_to_number(hourBegin,minuteBegin)
+		timeEnd = hour_to_number(hourEnd,minuteEnd)
+
+		newRule["begin"] = timeBegin
+		newRule["end"] = timeEnd
+
+		templateData['state']='conditions'
+		templateData['luminosity']=luminosityUpdt["value"]
+		templateData['rule']= ruleTypes[str(request.form.get('ruleType'))]
+		templateData['hourI']= hourBegin
+		templateData['hourE']= hourEnd
+		templateData['minI']= minuteBegin
+		templateData['minE']= minuteEnd
+
+		return redirect(url_for('hello_world'))
+			# return redirect(url_for('hello_world',state=str(state),luminosity=luminosityUpdt["value"]))
+		# if(luminosityUpdt["value"] != 0):
+		# 	return redirect(url_for('hello_world',luminosity=luminosityUpdt["value"],state=str(state)))
+		# else:
+		# 	return redirect(url_for('hello_world',state=str(state)))
 
 	if(btn == "createRule"):
-		newRule["type"] = ast.literal_eval(request.form.get('ruleType'))
+		# print(request.form.get('ruleType'))
 		newRule["parameters"] = copy.copy(conditions)
+
 		rules.append(copy.copy(newRule))
 
-		ruleString = " { type = { value ='" + str(newRule["type"]["value"]) + "', label='"+ str(newRule["type"]["label"])+"'}, parameters = {"
+		ruleString = " { type = " + str(newRule["type"]) + ", begin = " + str(newRule["begin"]) + ",end = "+ str(newRule["end"]) + " parameters = {"
 
-		for parameter in newRule["parameters"]:
-			ruleString = ruleString + str(parameter["type"]) + "=" + str(parameter["value"]) + ","
+		for key,value in newRule["parameters"].items():
+			ruleString = ruleString + str(key) + "=" + str(value) + ","
 
 		ruleString = ruleString + "} }"
 		mqttc.publish('newRule',ruleString)
 		
-		del conditions[:]
+		for key,value in conditions.items():
+			conditions[key] = 'None'
 
-		newFlags["condition"]=False
-		newFlags["conditionType"]=False
-		newFlags["rule"]=False
+		templateData['state']='init'
+		templateData['luminosity']=luminosityUpdt["value"]
 
-		if(luminosityUpdt["value"] != 0):
-			return redirect(url_for('hello_world',luminosity=luminosityUpdt["value"]))
-		else:
-			return redirect('/')
-
-	return render_template('index.html',async_mode=socketio.async_mode,newFlags=newFlags,ruleTypes=ruleTypes,conditionTypes=conditionTypes,conditionsMessages=conditionsMessages,condition=condition,conditions=conditions,rules=rules,luminosity=luminosityUpdt["value"])
+		return redirect('/')
 
 @socketio.on('my event')
 def handle_my_custom_event(json):
     print('received json data here: ' + str(json))
+    print(teste)
 
-# @socketio.on('delete')
-# def deleteRule (json):
-
+def hour_to_number(hour,minutes):
+	print(str(hour) + str(minutes))
+	return hour + minutes/60
 
 
 if __name__ == '__main__':

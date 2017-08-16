@@ -27,11 +27,6 @@ body {
 	padding-left: 1%;
 }
 
-/*.newRuleDiv{
-	display: none;
-	padding-top: 2%;
-}*/
-
 .conditions{
 	padding-bottom: 2%;
 }
@@ -50,4 +45,34 @@ body {
 
 .button-delete{
 	margin-left: 1%;
+}
+
+.newCondition{
+	display: flex;
+	flex-direction: column
+}
+
+#evaluatedHour, #newRuleButtonsDiv{
+	display: none;
+}
+
+#newRuleDiv{
+	display: none;
+}
+#conditionsDiv{
+	display: none;
+}
+#newConditionValueDiv{
+	display: none;
+}
+#newConditionTypeDiv{
+	display: none;
+}
+
+#hourDiv{
+	display: none;
+}
+
+#rule-text,#hourI-text,#hourE-text,#minI-text,#minE-text{
+	font-weight: bold;
 }
