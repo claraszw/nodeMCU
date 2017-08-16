@@ -158,8 +158,7 @@ def new():
 @socketio.on('my event')
 def handle_my_custom_event(json):
     print('received json data here: ' + str(json))
-    print(teste)
-
+    
 def hour_to_number(hour,minutes):
 	print(str(hour) + str(minutes))
 	return hour + minutes/60
