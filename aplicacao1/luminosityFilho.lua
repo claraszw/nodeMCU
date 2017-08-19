@@ -2,7 +2,7 @@
 
 NODE_ID = 1
 MQTT_PORT = 1883
-MQTT_HOST = "192.168.1.11"
+MQTT_HOST = "192.168.1.10"
 delay = 10000000 --ms
 
 send = true

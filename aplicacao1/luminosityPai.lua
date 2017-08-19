@@ -1,22 +1,26 @@
 
-
 MQTT_PORT = 1883
-MQTT_HOST = "192.168.0.7"
+MQTT_HOST = "192.168.1.10"
 delay = 10000000 --ms
 
 retry=true
 
-activeRules = {}
+luminosityValue=0
+lights = false
 
+activeRules = {}
+rules = {}
+
+nextTime = 1000
 
 function configWifi()
 	-- Configure Wi-Fi
 	wifi.setmode(wifi.STATION)
-	wifi.sta.config("piocorreia","wfpcapto41")
+	wifi.sta.config("sadock","esquilovoador")
 
 	while ip == nil do
 		wifi.sta.connect()
-		print("Connecting to piocorreia")
+		print("Connecting to sadock")
     	ip = wifi.sta.getip()
     	tmr.delay(5000000)
     end
@@ -29,6 +33,7 @@ function mqttConnect()
     		print('Connected to broker')
             mqttRegister('luminosity')
             mqttRegister('newRule')
+            mqttRegister('delete')
     		end, function(con,reason) 
     		-- gpio.mode(ledErrorPin, gpio.OUTPUT)
     		print("Couldn't connect to broker: ".. reason)
@@ -88,10 +93,18 @@ end
 function messageReceived(topic,data)
 
 	print('MESSAGE RECEIVED!'..topic ..'  ' .. data)
+
+	-- time = rtctime.epoch2cal(rtctime.get())
+	hour = 10--time.hour
+	min = 20 --time.min
+	timeConverted = hour + min/60
+
+	print("Current Time: " .. timeConverted)
+
 	if(topic == 'luminosity') then
         message = loadstring('return'..data)()
         luminosityValue = message.data
-		print('Received luminosity value: '.. message['data'] .. 'from: '..message['source'])
+		-- print('Received luminosity value: '.. message['data'] .. 'from: '..message['source'])
 
 		mqttPublish('luminosityUpdt',luminosityValue)
 
@@ -99,8 +112,54 @@ function messageReceived(topic,data)
 	elseif (topic == 'newRule') then
 		message = loadstring('return'..data)()
 
-		activeRules[message["type"]["value"]] = message["parameters"]
+		timeBegin = message['timeBegin']
+		timeEnd = message.timeEnd
 
+        print(message)
+        print(message.type)
+		print(timeBegin)
+		print(timeEnd)
+
+		if(timeConverted >= timeBegin and timeConverted<=timeEnd) then
+			print('New Active Rule!')
+			activeRules[message["type"]] = message["parameters"]
+		else
+			print('New Rule!')
+			if(timeBegin<nextTime) then
+				nextTime = timeBegin
+			end
+		end
+
+		table.insert(rules,message)
+
+	elseif (topic == 'delete') then
+		if(data == 'all') then
+
+			for key,value in pairs(rules) do
+				rules[key]=nil
+			end
+
+			for key,value in pairs(activeRules) do
+				activeRules[key]=nil
+			end
+		else
+
+			message = loadstring('return'..data)()
+
+			for key,value in pairs(rules) do
+				if(value['type'] == message['type'] and value['timeBegin'] == message['timeBegin']) then
+					print("Found Rule!")
+					rules[key]=nil
+					break
+				end
+			end
+
+			if(timeConverted >= message['timeBegin'] and timeConverted <= message['timeEnd']) then
+				print('Found active Rule!')
+				activeRules[message["type"]] = nil
+			end
+
+		end
 
 	elseif (topic == 'control') then
 		if(data == "quit") then
@@ -108,22 +167,22 @@ function messageReceived(topic,data)
 		end
 	end
 
+	count = 0
 
 	for rule,parameters in pairs(activeRules) do
-        print(rule)
 		act = true
+		count = count + 1
 
 		for parameter,value in pairs(parameters) do
 		  if(not checkParameter(parameter,value)) then
 		  	act = false
-		  	break;
+		  	break
 		  end
 		end
 
-		if(act) then
+		if(act or (count==0)) then
 			applyRule(rule)
 		end
-
 	end
 
 end
@@ -139,7 +198,7 @@ function checkParameter(parameterType,value)
 
 	elseif(parameterType == "lowerBoundLight") then
 		if (luminosityValue < value) then
-        print("value is smaller")
+        -- print("value is smaller")
 			return true
 		else
 			return false
@@ -154,8 +213,16 @@ print("Applying rule: "..rule)
 
 	if(rule == "lightsOn") then
 		print("Acender Luzes!")
+		if(not lights) then
+			lights = true
+			mqttPublish('lightsUpdt','on')
+		end
 	elseif (rule == "lightsOff") then
 		print("Apagar Luzes!")
+		if(lights) then
+			lights = false
+			mqttPublish('lightsUpdt','off')
+		end
 	end
 
 end

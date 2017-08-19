@@ -23,17 +23,22 @@
 			});
 
 			socket.on('luminosity', function(msg) {
+				console.log("Received: " + msg.data)
 			  var nDate = new Date();
 			  $('#readingsUpdated').text(nDate.getHours() + 'h:' + nDate.getMinutes() +
 			     'm:' + nDate.getSeconds() + 's').html();
 			  $('#luminosity').text(msg.data).html();
 			});
 
-			socket.on('testChange',function(msg){
-				changeit({{testText}})
+			socket.on('lights', function(msg) {
+				console.log("Received: " + msg.data)
+			  var nDate = new Date();
+			  $('#readingsUpdated').text(nDate.getHours() + 'h:' + nDate.getMinutes() +
+			     'm:' + nDate.getSeconds() + 's').html();
+			  $('#lights').text(msg.data).html();
 			});
 
-			console.log("entered with state" + {{state}})
+			// console.log("entered with state" + {{state}})
 			controlState({{state}})
 
 		});
@@ -57,11 +62,17 @@
 
 	<h3>Luminosidade : <span id="luminosity">{{luminosity}}</span></h3>
 	<br>
+	<h3>Luzes: <span id="lights">{{lightsLabel[lights]}}</span></h3>
 	<h3>Regras: </h3>
 
 	{% if rules|length == 0 %}
 		<span class="empty-label">Não há Regras</span>
+	{% else %}
+		<form method = "POST" action="{{url_for('deleteRule')}}">
+			<button name="btn" value="all" class="button-delete">Excluir Todas</button>
+		</form>
 	{% endif %}
+
 
 	<ul>
 
@@ -76,9 +87,10 @@
 						{% endif %}
 					{% endfor %}
 				</ul>
+				<span>{{rule['beginString']}}</span>  <span>{{rule['endString']}}</span>
 			</span>
 			<form method = "POST" action="{{url_for('deleteRule')}}">
-				<button name="btn" value="{{rule}}" class="button-delete">Excluir</button>
+				<button name="btn" value="{{rule}}" class="button-delete" style="margin:auto; margin-left:15px; ">Excluir</button>
 			</form>
 		</div>
 	{% endfor %}
@@ -100,7 +112,7 @@
 			<button class="button-newCondition-next" onclick="evaluateHour({{rules}},{{ruleTypes}})" type="button">Próximo</button>
 		</div>
 		<div class="evaluatedHour" id="evaluatedHour">
-			Regra: <span id="rule-text">{{rule}}</span><br>
+			Regra: <span id="rule-text">{{ruleTypes[rule]}}</span><br>
 			De: <span id="hourI-text">{{hourI}}</span>:<span id="minI-text">{{minI}}</span>
 			Até: <span id="hourE-text">{{hourE}}</span>:<span id="minE-text">{{minE}}</span>
 		</div>
@@ -108,16 +120,13 @@
 
 			<h4>Condições:</h4>
 
-			{% for condition in conditions %}
-				{% if condition.value != 'None' %}
-					{% set conditionFlag = True %}
-				{% endif %}
-			{% endfor %}
-
 			<ul>
 			{% for key,value in conditions.items() %}
 				{%if value != 'None' %}
+				<span style="display:flex;">
 					<li>{{conditionTypes[key]}}: {{value}}</li>
+					<button name="btn" value="{{key}}" style="margin:auto; margin-left:15px; ">Excluir</button>
+				</span>
 				{%endif%}
 			{% endfor %}
 			</ul>
@@ -133,7 +142,7 @@
 						</div>
 						<br>
 						<div>
-							<button class="button-newCondition-back" type="button" onclick="controlState('conditions')">Voltar</button>
+							<button class="button-newCondition-back" type="button" onclick="controlState('new condition')">Voltar</button>
 							
 							<button class="button-newCondition" type="submit" name="btn" value="createCondition">Adicionar Condição</button>
 							
@@ -149,7 +158,7 @@
 					</select>
 				</span>
 				<div>
-					<button class="button-newCondition-back" type="button" onclick="controlState('new rule')">Voltar</button>
+					<button class="button-newCondition-back" type="button" onclick="controlState('conditions')">Voltar</button>
 					<button class="button-newCondition-next" type="button" onclick="evaluateConditions({{conditions}},{{conditionTypes}})">Próximo</button>
 				</div>
 			</div>

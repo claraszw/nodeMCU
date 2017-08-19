@@ -44,11 +44,11 @@ function evaluateHour(rules,ruleTypes){
 	for(i=0; i<rules.length; i++){
 		rule = rules[i]
 		console.log(rule.type)
-		console.log(rule.begin,rule.end,timeBegin,timeEnd)
+		console.log(rule.timeBegin,rule.timeEnd,timeBegin,timeEnd)
 
 		if(rule.type == selectedRule){
 
-			if((rule.begin < timeBegin && timeBegin < rule.end) || (rule.begin<timeEnd && timeEnd < rule.end) || (timeBegin < rule.begin && timeEnd>rule.end)) {
+			if((rule.timeBegin <= timeBegin && timeBegin <= rule.timeEnd) || (rule.timeBegin <= timeEnd && timeEnd <= rule.timeEnd) || (timeBegin <= rule.timeBegin && timeEnd >= rule.timeEnd)) {
 				alert("Já existe uma regra desse tipo no intervalo escolhido. Por favor escolha outra regra ou outro horário.");
 
 				return;
@@ -117,6 +117,7 @@ function controlState(state){
 	else if(state == "new condition"){
 		document.getElementById('newConditionTypeDiv').style.display = 'block'
 		document.getElementById('newConditionButton').style.display = 'none'
+		document.getElementById('newConditionValueDiv').style.display = 'none'
 	}
 	else if(state =="new condition type"){
 		document.getElementById('newConditionButton').style.display = 'none'

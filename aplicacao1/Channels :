@@ -1,0 +1,30 @@
+Channels :
+
+
+
+Pai publishes:
+
+	luminosityUpdt
+
+
+Pai listens:
+
+	luminosity
+	newRule
+	delete
+
+
+Filho publishes:
+
+	luminosity
+
+Filho listens:
+
+Raspberry publishes:
+
+	newRule
+	delete
+
+Raspberry listens:
+
+	luminosityUpdt
