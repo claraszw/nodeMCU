@@ -1,26 +1,31 @@
 
 MQTT_PORT = 1883
-MQTT_HOST = "192.168.1.10"
-delay = 10000000 --ms
+MQTT_HOST = "192.168.0.7"
+delay = 15000000 --ms
+
+CONNECTED_LED = 1
+ERROR_LED = 2
+
+gpio.mode(CONNECTED_LED,gpio.OUTPUT)
+gpio.mode(ERROR_LED,gpio.OUTPUT)
 
 retry=true
 
-luminosityValue=0
+luminosityValues = {'undefined','undefined'}
+luminosityValue = 0
 lights = false
 
-activeRules = {}
 rules = {}
-
-nextTime = 1000
+gpio.write(ERROR_LED,gpio.HIGH)
 
 function configWifi()
 	-- Configure Wi-Fi
 	wifi.setmode(wifi.STATION)
-	wifi.sta.config("sadock","esquilovoador")
+	wifi.sta.config("piocorreia","wfpcapto41")
 
 	while ip == nil do
 		wifi.sta.connect()
-		print("Connecting to sadock")
+		print("Connecting to piocorreia")
     	ip = wifi.sta.getip()
     	tmr.delay(5000000)
     end
@@ -34,6 +39,10 @@ function mqttConnect()
             mqttRegister('luminosity')
             mqttRegister('newRule')
             mqttRegister('delete')
+            mqttPublish('configInit','sala516')
+            mqttPublish('request','luminosity')
+            gpio.write(CONNECTED_LED,gpio.HIGH)
+            gpio.write(ERROR_LED,gpio.LOW)
     		end, function(con,reason) 
     		-- gpio.mode(ledErrorPin, gpio.OUTPUT)
     		print("Couldn't connect to broker: ".. reason)
@@ -60,6 +69,7 @@ function mqttPublish(channel,data)
 end
 
 function handleMqttError()
+	gpio.write(ERROR_LED,gpio.HIGH)
 	tmr.create():alarm(10*1000, tmr.ALARM_SINGLE, mqttConnect)
 end
 
@@ -103,34 +113,23 @@ function messageReceived(topic,data)
 
 	if(topic == 'luminosity') then
         message = loadstring('return'..data)()
+        luminosityValues[message.source] = message.data
+
         luminosityValue = message.data
+        
 		-- print('Received luminosity value: '.. message['data'] .. 'from: '..message['source'])
 
-		mqttPublish('luminosityUpdt',luminosityValue)
+		mqttPublish('luminosityUpdt',luminosityValues[message.source])
 
 
 	elseif (topic == 'newRule') then
 		message = loadstring('return'..data)()
 
-		timeBegin = message['timeBegin']
-		timeEnd = message.timeEnd
-
         print(message)
         print(message.type)
-		print(timeBegin)
-		print(timeEnd)
 
-		if(timeConverted >= timeBegin and timeConverted<=timeEnd) then
-			print('New Active Rule!')
-			activeRules[message["type"]] = message["parameters"]
-		else
-			print('New Rule!')
-			if(timeBegin<nextTime) then
-				nextTime = timeBegin
-			end
-		end
+		rules[message["type"]] = message["parameters"]
 
-		table.insert(rules,message)
 
 	elseif (topic == 'delete') then
 		if(data == 'all') then
@@ -138,42 +137,50 @@ function messageReceived(topic,data)
 			for key,value in pairs(rules) do
 				rules[key]=nil
 			end
-
-			for key,value in pairs(activeRules) do
-				activeRules[key]=nil
-			end
 		else
 
 			message = loadstring('return'..data)()
 
 			for key,value in pairs(rules) do
 				if(value['type'] == message['type'] and value['timeBegin'] == message['timeBegin']) then
-					print("Found Rule!")
 					rules[key]=nil
 					break
 				end
 			end
 
-			if(timeConverted >= message['timeBegin'] and timeConverted <= message['timeEnd']) then
-				print('Found active Rule!')
-				activeRules[message["type"]] = nil
-			end
-
 		end
 
-	elseif (topic == 'control') then
-		if(data == "quit") then
-			mqttPublish('control1','quit')
-		end
 	end
 
-	count = 0
+	-- count = 0
 
-	for rule,parameters in pairs(activeRules) do
+	-- for rule,parameters in pairs(rules) do
+	-- 	act = true
+	-- 	count = count + 1
+
+	-- 	for parameter,value in pairs(parameters) do
+	-- 	  if(not checkParameter(parameter,value)) then
+	-- 	  	act = false
+	-- 	  	break
+	-- 	  end
+	-- 	end
+
+	-- 	if(act or (count==0)) then
+	-- 		applyRule(rule)
+	-- 	end
+	-- end
+
+	checkLights()
+
+end
+
+function checkLights()
+	if(rules["lightsOn"] ~= nil) then
+        count = 0
 		act = true
 		count = count + 1
 
-		for parameter,value in pairs(parameters) do
+		for parameter,value in pairs(rules["lightsOn"]) do
 		  if(not checkParameter(parameter,value)) then
 		  	act = false
 		  	break
@@ -181,23 +188,35 @@ function messageReceived(topic,data)
 		end
 
 		if(act or (count==0)) then
-			applyRule(rule)
+			applyRule("lightsOn")
+		else
+			applyRule("lightsOff")
 		end
-	end
 
+	else 
+		applyRule("lightsOff")
+	end
+end
+
+function checkTemperature( ... )
+	-- body
+end
+
+function checkAlarm( ... )
+	-- body
 end
 
 function checkParameter(parameterType,value)
 
 	if(parameterType == "upperBoundLight") then
-		if (luminosityValue > value) then
+		if (luminosityValue ~= nil and luminosityValue > value) then
 			return true
 		else
 			return false
 		end
 
 	elseif(parameterType == "lowerBoundLight") then
-		if (luminosityValue < value) then
+		if (luminosityValue ~= nil and luminosityValue < value) then
         -- print("value is smaller")
 			return true
 		else
@@ -238,5 +257,37 @@ function init()
 	end
 
 end
+
+function checkValues()
+
+	count = 0
+	sumLuminosity = 0
+
+	for i,luminosity in ipairs(luminosityValues) do
+		if(luminosity ~= 'undefined') then
+			sumLuminosity = sumLuminosity + luminosity
+			count = count + 1
+			luminosityValues[i] = 'undefined'
+		else
+			print("Didn't received luminosity value from " .. i)
+		end
+	end
+
+	if count > 0 then
+		luminosityValue = sumLuminosity/count
+	end
+
+	mqttPublish('luminosityUpdt',luminosityValue)
+
+	tmr.create():alarm(delay/1000,tmr.ALARM_SINGLE, function()
+		 checkValues()
+		  end)
+
+end
+
+-- tmr.create():alarm(delay*2/1000,tmr.ALARM_SINGLE, function()
+-- 		 checkValues()
+-- 		  end)
+
 
 init()

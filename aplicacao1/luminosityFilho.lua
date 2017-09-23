@@ -2,7 +2,7 @@
 
 NODE_ID = 1
 MQTT_PORT = 1883
-MQTT_HOST = "192.168.1.10"
+MQTT_HOST = "192.168.43.217"
 delay = 10000000 --ms
 
 send = true
@@ -11,11 +11,11 @@ retry = true
 function configWifi()
 	-- Configure Wi-Fi
 	wifi.setmode(wifi.STATION)
-	wifi.sta.config("sadock","esquilovoador")
+	wifi.sta.config("G4_5931","bananadepijamas")
 
 	while ip == nil do
 		wifi.sta.connect()
-		print("Connecting to sadock")
+		print("Connecting to G4_5931")
     	ip = wifi.sta.getip()
     	tmr.delay(3000000)
     end
@@ -27,6 +27,7 @@ function mqttConnect()
 	mqttClient:connect(MQTT_HOST,MQTT_PORT,0,0, function(con)
     		print('Connected to broker')
             mqttRegister('control1')
+            mqttRegister('request')
     		end, function(con,reason) 
     		-- gpio.mode(ledErrorPin, gpio.OUTPUT)
     		print("Couldn't connect to broker: ".. reason)
@@ -131,6 +132,17 @@ function messageReceived(topic,data)
 			send = false
 		end
 	end
+
+	-- if(topic == 'request') then
+	-- 	if data == 'luminosity' then
+	-- 		messageLight = {}
+	-- 		messageLight['source'] = NODE_ID
+	-- 		messageLight['data'] = luminosityValue
+
+	-- 		messageLight = marshall(messageLight)
+	-- 		mqttPublish('luminosity',messageLight)
+	-- 	end
+	-- end
 end
 
 init()
