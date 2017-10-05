@@ -1,6 +1,6 @@
 
 MQTT_PORT = 1883
-MQTT_HOST = "192.168.0.7"
+MQTT_HOST = "192.168.43.217"
 delay = 15000000 --ms
 
 CONNECTED_LED = 1
@@ -21,11 +21,11 @@ gpio.write(ERROR_LED,gpio.HIGH)
 function configWifi()
 	-- Configure Wi-Fi
 	wifi.setmode(wifi.STATION)
-	wifi.sta.config("piocorreia","wfpcapto41")
+	wifi.sta.config("G4_5931","12345678")
 
 	while ip == nil do
 		wifi.sta.connect()
-		print("Connecting to piocorreia")
+		print("Connecting to G4_5931")
     	ip = wifi.sta.getip()
     	tmr.delay(5000000)
     end
@@ -104,13 +104,6 @@ function messageReceived(topic,data)
 
 	print('MESSAGE RECEIVED!'..topic ..'  ' .. data)
 
-	-- time = rtctime.epoch2cal(rtctime.get())
-	hour = 10--time.hour
-	min = 20 --time.min
-	timeConverted = hour + min/60
-
-	print("Current Time: " .. timeConverted)
-
 	if(topic == 'luminosity') then
         message = loadstring('return'..data)()
         luminosityValues[message.source] = message.data
@@ -133,7 +126,6 @@ function messageReceived(topic,data)
 
 	elseif (topic == 'delete') then
 		if(data == 'all') then
-
 			for key,value in pairs(rules) do
 				rules[key]=nil
 			end

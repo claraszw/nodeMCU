@@ -76,3 +76,13 @@ body {
 #rule-text,#hourI-text,#hourE-text,#minI-text,#minE-text{
 	font-weight: bold;
 }
+
+.temperature{
+	margin-top: 3%;
+}
+
+.temperature input{
+	margin-left: 5px;
+	width: 70px;
+	-moz-appearance:textfield;
+}

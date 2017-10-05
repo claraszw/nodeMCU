@@ -43,7 +43,7 @@ def on_message(client, userdata, message):
     		checkRuleTime(rule,"send")
 
 
-ruleTypes = {"lightsOn":"Acender Luzes"}
+ruleTypes = {"lightsOn":"Acender Luzes", "controlTemperature": "Manter Temperatura"}
 conditionTypes = {"lowerBoundLight": "Luminosidade Abaixo De","upperBoundLight": "Luminosidade Acima De"}
 
 condition = {}
@@ -61,6 +61,8 @@ mqttc.loop_start()
 
 actions = {}
 
+print("Actions Exist" + str(actions))
+
 actionTimer = {"nextTimer" : None, 'firstTime' : True}
 
 nextTime = { "value" : 100 }
@@ -71,6 +73,7 @@ newRule = {
 
 luminosityUpdt = {}
 luminosityUpdt["value"] = 0
+temperatureParam = 22
 
 lightsUpdt = {"value": "off"}
 lightsLabel = {"off" : "Apagadas", "on": "Acesas"}
@@ -85,7 +88,8 @@ templateData = {
 		# 'luminosity':luminosityUpdt["value"],
 		'lights':lightsUpdt["value"],
 		'lightsLabel': lightsLabel,
-		'state':'init'
+		'state':'init',
+		'temperatureParam':temperatureParam
 };
 
 # Rule Template = {
@@ -93,18 +97,22 @@ templateData = {
 #  	'beginString': 'De: 09:00',
 #  	'parameters': {'lowerBoundLight': 300, 'upperBoundLight': 'None'},
 #  	'type': 'lightsOn',
-#   	'timeEnd': 11,
-#  	'timeBegin': 9
+#   'timeEnd': 11,
+#  	'timeBegin': 9,
+#	'temperature':22
 # }
 
 
 def addRule(rule):
 
+	print("In Add: " + str(actions))
+
+	# If the time doesn't exist in the timer dictionary creates an empty array to that entry 
 	if(rule["timeBegin"] not in actions):
 		actions[rule["timeBegin"]] = {}
 		actions[rule["timeBegin"]]["ruleBegin"] = []
 		actions[rule["timeBegin"]]["ruleBegin"].append(rule)
-
+	# Add rule to array of time
 	else:
 		if("ruleBegin" not in actions[rule["timeBegin"]]):
 			actions[rule["timeBegin"]]["ruleBegin"] = []
@@ -119,11 +127,12 @@ def addRule(rule):
 		actions[rule["timeEnd"]]["ruleDelete"].append(rule)
 
 	else:
-		if("ruleDelete" not in actions):
+		if("ruleDelete" not in actions[rule["timeEnd"]]):
 			actions[rule["timeEnd"]]["ruleDelete"] = []
 
 		actions[rule["timeEnd"]]["ruleDelete"].append(rule)
 
+	print("Added Rule: " + str(actions))
 
 def getRules():
 
@@ -136,19 +145,17 @@ def getRules():
 	#read rules from file
 
 	for line in fileRules:
-		rules.append(ast.literal_eval(line))
-	
+		rules.append(ast.literal_eval(line))	
 
 	#assemble timer array
 
 	for rule in rules:
-
 		addRule(rule)
 		#see if rule should already be sent
 		checkRuleTime(rule,"send")
 
 	if(len(actions) > 0):
-		try:
+		try: # see if there is a rule to be sent today
 			nextTime["value"] = min(time for time in actions if time > currentTime)
 			print("In try: " + str(nextTime["value"]))
 		except ValueError:
@@ -161,6 +168,7 @@ def getRules():
 
 		createTimer()	
 
+#	Check if the rule is active, and takes action (send new rule or delete rule)
 def checkRuleTime(rule,ruleType):	
 
 	now = datetime.now()
@@ -171,16 +179,29 @@ def checkRuleTime(rule,ruleType):
 		if(currentTime >= rule["timeBegin"] and currentTime<= rule["timeEnd"]):
 			if(ruleType == "send"):
 				sendRule(rule)
-			else if(ruleType == "delete"):
-				mqttc.publish('delete',"{type = '"+str(rule['type']) + "',timeBegin="+str(rule['timeBegin'])+", timeEnd ="+str(rule['timeEnd'])+" }")
+			elif(ruleType == "delete"):
+				ruleString = "{type = '"+str(rule['type']) + "', parameters = {"
+
+				for key,value in rule["parameters"].items():
+					if(value != 'None'):
+						ruleString = ruleString + str(key) + "=" + str(value) + ","
+
+				ruleString = ruleString + "} }"
+				mqttc.publish('delete',ruleString)
 			return True
 	else:
 		if(currentTime >= rule["timeBegin"] or currentTime<= rule["timeEnd"]):
 			if(ruleType == "send"):
 				sendRule(rule)
-			else if(ruleType == "delete"):
-				
-				mqttc.publish('delete',"{type = '"+str(rule['type']) + "',timeBegin="+str(rule['timeBegin'])+", timeEnd ="+str(rule['timeEnd'])+" }")
+			elif(ruleType == "delete"):
+				ruleString = "{type = '"+str(rule['type']) + "', parameters = {"
+
+				for key,value in rule["parameters"].items():
+					if(value != 'None'):
+						ruleString = ruleString + str(key) + "=" + str(value) + ","
+
+				ruleString = ruleString + "} }"
+				mqttc.publish('delete',ruleString)
 			return True
 
 	return False
@@ -237,40 +258,8 @@ def executeTimer(time):
 		nextTime["value"] = min(actions)
 		createTimer()
 
+def deleteRuleFromTimer(removedRule):
 
-
-def hour_to_number(hour,minutes):
-	print(str(hour) + str(minutes))
-	return round(hour + minutes/60, 2)
-
-
-@app.route('/<state>/<luminosity>/<rule>/<begin>/<end>', methods=['GET', 'POST'])
-@app.route('/', methods=['GET', 'POST'])
-def hello_world(state="init",luminosity=0,data={}):
-
-	# luminosityUpdt = luminosity
-	# stateUpdt = state
-	# dataUpdt = data
-
-	return render_template('index.html',**templateData);
-
-@app.route('/deleteRule',methods=['GET', 'POST'])
-def deleteRule():
-
-	btn = request.form['btn']
-
-	if(btn == 'all'):
-		del rules[:]
-		actionTimer["nextTimer"].cancel()
-		nextTime["value"] = 100
-		mqttc.publish('delete','all')
-	
-	else:
-		removedRule = ast.literal_eval(request.form['btn']) 
-		checkRuleTime(removedRule,"delete")
-		rules.remove(removedRule)
-
-	#delete rule from timer
 	actions[removedRule["timeBegin"]]["ruleBegin"].remove(removedRule)
 	actions[removedRule["timeEnd"]]["ruleDelete"].remove(removedRule)
 
@@ -290,6 +279,7 @@ def deleteRule():
 		if(len(actions[removedRule["timeBegin"]]["ruleBegin"]) == 0):
 			del actions[removedRule["timeBegin"]]
 			if(sameTimeBegin):
+				print("IT WAS THE TIME BEGIN")
 				now = datetime.now()
 				currentTime = hour_to_number(now.hour,now.minute)
 				try:
@@ -300,39 +290,49 @@ def deleteRule():
 					nextTime["value"] = min(actions)
 					print("In exceptions: " + str(nextTime["value"]))
 
+				print("WILL CREATE A NEW TIMER FOR:" + str(nextTime["value"]))
 				createTimer()
 
 	if("ruleBegin" not in actions[removedRule["timeEnd"]]):
 		if(len(actions[removedRule["timeEnd"]]["ruleDelete"]) == 0):
 			del actions[removedRule["timeEnd"]]
-			if(sameTimeEnd):
-				now = datetime.now()
-				currentTime = hour_to_number(now.hour,now.minute)
-				try:
-					nextTime["value"] = min(time for time in actions if time > currentTime)
-					print("In try: " + str(nextTime["value"]))
-				except ValueError:
-					#get first time next day
-					nextTime["value"] = min(actions)
-					print("In exceptions: " + str(nextTime["value"]))
+			if(actions):
+				if(sameTimeEnd):
+					now = datetime.now()
+					currentTime = hour_to_number(now.hour,now.minute)
+					try:
+						nextTime["value"] = min(time for time in actions if time > currentTime)
+						print("In try: " + str(nextTime["value"]))
+					except ValueError:
+						#get first time next day
+						nextTime["value"] = min(actions)
+						print("In exceptions: " + str(nextTime["value"]))
 
-				createTimer()
+					createTimer()
+			else:
+				actionTimer["nextTimer"].cancel()
+				nextTime["value"] = 100
+
+def hour_to_number(hour,minutes):
+	print(str(hour) + str(minutes))
+	return round(hour + minutes/60, 2)
 
 
-	fileNewRules = open('rules.txt','w')
+@app.route('/<state>/<luminosity>/<rule>/<begin>/<end>', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
+def hello_world(state="init",luminosity=0,data={}):
 
-	for rule in rules:
-		fileNewRules.write(str(rule)+'\n')
+	# luminosityUpdt = luminosity
+	# stateUpdt = state
+	# dataUpdt = data
 
-	fileNewRules.close()
-
-	templateData['luminosity']=luminosityUpdt["value"]
-	
-	return redirect('/')
+	return render_template('index.html',**templateData);
 
 
 @app.route('/new/',methods=['GET', 'POST'])
 def new():
+
+	print("in new: " + str(actions))
 
 	btn = request.form['btn']
 
@@ -386,6 +386,10 @@ def new():
 			templateData['hourE']= hourEnd
 			templateData['minI']= minuteBegin
 			templateData['minE']= minuteEnd
+			templateData['temperatureParam']= ast.literal_eval(request.form.get('temperature'))
+
+			if(newRule["type"] == "controlTemperature"):
+				newRule["temperature"] = ast.literal_eval(request.form.get('temperature'))
 
 		# return redirect(url_for('hello_world'))
 			# return redirect(url_for('hello_world',state=str(state),luminosity=luminosityUpdt["value"]))
@@ -427,7 +431,11 @@ def new():
 			templateData['hourE']= hourEnd
 			templateData['minI']= minuteBegin
 			templateData['minE']= minuteEnd
+			templateData['temperatureParam']= ast.literal_eval(request.form.get('temperature'))
 
+
+			if(newRule["type"] == "controlTemperature"):
+				newRule["temperature"] = ast.literal_eval(request.form.get('temperature'))
 
 		print("New Rule type: " + newRule["type"])
 
@@ -467,9 +475,13 @@ def new():
 						nextTime["value"] = newRuleCopy["timeBegin"]
 						createTimer()
 				else:
-					if(newRuleCopy["timeBegin"] < nextTime["value"]):
+					if(newRuleCopy["timeBegin"] > currentTime):
 						nextTime["value"] = newRuleCopy["timeBegin"]
 						createTimer()
+					else:
+						if(newRuleCopy["timeBegin"] < nextTime["value"]):
+							nextTime["value"] = newRuleCopy["timeBegin"]
+							createTimer()
 		else:
 			if(ruleSended):
 				nextTime["value"] = newRuleCopy["timeEnd"]
@@ -492,6 +504,7 @@ def new():
 	elif(conditionTypes[btn]):
 		conditions[btn] = 'None'
 		templateData['state']='conditions'
+		templateData['temperatureParam']='conditions'
 		# templateData['rule']= ruleTypes[str(request.form.get('ruleType'))]
 		# templateData['hourI']= hourBegin
 		# templateData['hourE']= hourEnd
@@ -502,6 +515,38 @@ def new():
 	templateData['lights']=lightsUpdt["value"]
 	return redirect('/')
 
+@app.route('/deleteRule',methods=['GET', 'POST'])
+def deleteRule():
+
+	btn = request.form['btn']
+
+	if(btn == 'all'):
+		del rules[:]
+		actionTimer["nextTimer"].cancel()
+		actions = {}
+		nextTime["value"] = 100
+		mqttc.publish('delete','all')
+	
+	else:
+		removedRule = ast.literal_eval(request.form['btn']) 
+		checkRuleTime(removedRule,"delete")
+		rules.remove(removedRule)
+		#delete rule from timer
+		deleteRuleFromTimer(removedRule)
+		
+
+
+	fileNewRules = open('rules.txt','w')
+
+	for rule in rules:
+		fileNewRules.write(str(rule)+'\n')
+
+	fileNewRules.close()
+
+	templateData['luminosity']=luminosityUpdt["value"]
+	
+	return redirect('/')
+
 def sendRule(rule):
 	ruleString = " { type = \"" + str(rule["type"]) + "\", timeBegin = " + str(rule["timeBegin"]) + ",timeEnd = "+ str(rule["timeEnd"]) + ", parameters = {"
 
@@ -509,7 +554,10 @@ def sendRule(rule):
 		if(value != 'None'):
 			ruleString = ruleString + str(key) + "=" + str(value) + ","
 
-	ruleString = ruleString + "} }"
+	if(rule["type"] == "controlTemperature"):
+		ruleString = ruleString + '}, temperature = ' + str(rule["temperature"]) + '}'
+	else:
+		ruleString = ruleString + "} }"
 
 	mqttc.publish('newRule',ruleString)
 

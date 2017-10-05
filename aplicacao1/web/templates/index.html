@@ -80,6 +80,9 @@
 		<div class="rules">
 			<span>
 				<li>{{ruleTypes[rule["type"]]}}</li>
+				{% if rule["type"] == "controlTemperature"%}
+					<span>Temperatura: {{rule["temperature"]}}ºC</span>
+				{% endif %}
 				<ul>
 					{% for key,value in rule["parameters"].items() %}
 						{% if value != 'None' %}
@@ -117,6 +120,10 @@
 			Até: <span id="hourE-text">{{hourE}}</span>:<span id="minE-text">{{minE}}</span>
 		</div>
 		<div class="conditions" id="conditionsDiv">
+
+			<div class="temperature" id="temperature">
+				<label for="temperature">Temperatura:</label><input type="number" min="15" max="32" value="{{temperatureParam}}" name="temperature"><span>ºC</span>
+			</div>
 
 			<h4>Condições:</h4>
 
@@ -159,7 +166,7 @@
 				</span>
 				<div>
 					<button class="button-newCondition-back" type="button" onclick="controlState('conditions')">Voltar</button>
-					<button class="button-newCondition-next" type="button" onclick="evaluateConditions({{conditions}},{{conditionTypes}})">Próximo</button>
+					<button class="button-newCondition-next" type="button" onclick="evaluateConditions({{rules}},{{ruleTypes}},{{conditions}},{{conditionTypes}})">Próximo</button>
 				</div>
 			</div>
 		</div>	

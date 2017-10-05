@@ -23,20 +23,9 @@ var socket
    	changed = "changed"
    	init = "init"
 
-function changeit(item){
-	alert("on change!");
-	item = changed;
-	// {{testText}} = 'changed';
-}
-
-// function updateConditions(conditions){
-
-// }
-
-function evaluateHour(rules,ruleTypes){
+function checkSameTime(rules,ruleTypes){
 
 	var selectedRule = document.getElementById('selectedRule').value;
-	console.log()
 	timeBegin = parseFloat(document.getElementById('hourI').value) + parseFloat(document.getElementById('minI').value/60) 
 	timeEnd = parseFloat(document.getElementById('hourE').value) + parseFloat(document.getElementById('minE').value/60)
 	console.log(selectedRule)
@@ -47,12 +36,35 @@ function evaluateHour(rules,ruleTypes){
 		console.log(rule.timeBegin,rule.timeEnd,timeBegin,timeEnd)
 
 		if(rule.type == selectedRule){
-
 			if((rule.timeBegin <= timeBegin && timeBegin <= rule.timeEnd) || (rule.timeBegin <= timeEnd && timeEnd <= rule.timeEnd) || (timeBegin <= rule.timeBegin && timeEnd >= rule.timeEnd)) {
-				alert("Já existe uma regra desse tipo no intervalo escolhido. Por favor escolha outra regra ou outro horário.");
-
-				return;
+				if(selectedRule == "controlTemperature"){
+					return true;
+				}
+				else{
+					var value = document.getElementById('conditionTypeSelected').value
+					if(rule.parameters[value] != 'None'){
+						return true;
+					}
+				}
 			}
+		}
+	}
+}
+
+function evaluateHour(rules,ruleTypes){
+	console.log("in evaluateHour");
+
+	var selectedRule = document.getElementById('selectedRule').value;
+
+	console.log("In evaluateHour, selectedRule: ",selectedRule)
+
+	if(selectedRule == "controlTemperature"){
+		if(checkSameTime(rules,ruleTypes)){
+			alert("Já existe uma temperatura para esse horário. Por favor escolha outro horário ou outra regra");
+			return;
+		}
+		else{
+
 		}
 	}
 
@@ -61,17 +73,23 @@ function evaluateHour(rules,ruleTypes){
 	document.getElementById('hourE-text').innerHTML = document.getElementById('hourE').value
 	document.getElementById('minI-text').innerHTML = document.getElementById('minI').value
 	document.getElementById('minE-text').innerHTML = document.getElementById('minE').value
-
-	controlState('conditions');
-
+	console.log("About to change state")
+	controlState('conditions',selectedRule);
 }
 
 
-function evaluateConditions(conditions,conditionTypes){
+function evaluateConditions(rules,ruleTypes,conditions,conditionTypes){
 	var value = document.getElementById('conditionTypeSelected').value
+	var selectedRule = document.getElementById('selectedRule').value;
+
+	if(selectedRule == "lightsOn"){
+		if(checkSameTime(rules,ruleTypes)){
+			alert("Essa condição já existe para essa regra nesse horário. Por favor escolha outra.");
+			return;
+		}
+	}
 
 	if(conditions[value] != 'None'){
-		console.log("should alert")
 		alert("Essa condição já existe nessa regra. Por favor escolha outra.");
 	}
 	else{
@@ -80,7 +98,7 @@ function evaluateConditions(conditions,conditionTypes){
 	}
 }
 
-function controlState(state){
+function controlState(state,selectedRule){
 
 	console.log("Received state!: " + state)
 
@@ -113,6 +131,12 @@ function controlState(state){
 		document.getElementById('hourDiv').style.display = 'none'
 		document.getElementById('newConditionTypeDiv').style.display = 'none'
 		document.getElementById('newConditionValueDiv').style.display = 'none'
+		if(selectedRule == "controlTemperature"){
+			document.getElementById('temperature').style.display = 'block'
+		}
+		else if(selectedRule == "lightsOn"){
+			document.getElementById('temperature').style.display = 'none'
+		}
 	}
 	else if(state == "new condition"){
 		document.getElementById('newConditionTypeDiv').style.display = 'block'
