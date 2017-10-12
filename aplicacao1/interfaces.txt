@@ -1,0 +1,30 @@
+Interfaces: 
+
+
+	Sensor Info sent from child nodes:
+
+	Channel : sensorInfo
+
+	{
+		source = number
+		luminosity = number,
+		temperature = number
+	}
+
+
+	Rule Sent from Raspberry:  // Right now the pair type - parameters define an unique rule
+	{
+		type = string,
+		parameters = { 
+			parameter = value,
+			temperature? = number // this parameter only exists if the rule it's "controlTemperature"
+		}
+	}
+
+	Delete Rule:
+		- "all"
+		- Rule
+
+
+
+	-----------------------------------------------------------------

@@ -1,6 +1,6 @@
 
 MQTT_PORT = 1883
-MQTT_HOST = "192.168.43.217"
+MQTT_HOST = "192.168.1.6"
 delay = 15000000 --ms
 
 CONNECTED_LED = 1
@@ -11,21 +11,23 @@ gpio.mode(ERROR_LED,gpio.OUTPUT)
 
 retry=true
 
-luminosityValues = {'undefined','undefined'}
+sensorValues = {{},{}}
 luminosityValue = 0
+temperatureValue = 0
 lights = false
+airConditioning = false
 
-rules = {}
+rules = {lightsOn = {}, controlTemperature = {}}
 gpio.write(ERROR_LED,gpio.HIGH)
 
 function configWifi()
 	-- Configure Wi-Fi
 	wifi.setmode(wifi.STATION)
-	wifi.sta.config("G4_5931","12345678")
+	wifi.sta.config("sadock","esquilovoador")
 
 	while ip == nil do
 		wifi.sta.connect()
-		print("Connecting to G4_5931")
+		print("Connecting to sadock")
     	ip = wifi.sta.getip()
     	tmr.delay(5000000)
     end
@@ -36,11 +38,11 @@ function mqttConnect()
 	print('Attempt to connect')
 	mqttClient:connect(MQTT_HOST,MQTT_PORT,0,0, function(con)
     		print('Connected to broker')
-            mqttRegister('luminosity')
+            mqttRegister('sensorInfo')
             mqttRegister('newRule')
             mqttRegister('delete')
             mqttPublish('configInit','sala516')
-            mqttPublish('request','luminosity')
+            mqttPublish('request','sensorInfo')
             gpio.write(CONNECTED_LED,gpio.HIGH)
             gpio.write(ERROR_LED,gpio.LOW)
     		end, function(con,reason) 
@@ -104,38 +106,37 @@ function messageReceived(topic,data)
 
 	print('MESSAGE RECEIVED!'..topic ..'  ' .. data)
 
-	if(topic == 'luminosity') then
-        message = loadstring('return'..data)()
-        luminosityValues[message.source] = message.data
+	if(topic == 'sensorInfo') then
+    	message = loadstring('return'..data)()
 
-        luminosityValue = message.data
-        
-		-- print('Received luminosity value: '.. message['data'] .. 'from: '..message['source'])
+        sensorValues[message.source] = message.info -- change to message
+        luminosityValue = sensorValues[message.source].luminosity
+        temperatureValue = sensorValues[message.source].temperature
+	-- print('Received luminosity value: '.. message['data'] .. 'from: '..message['source'])
 
-		mqttPublish('luminosityUpdt',luminosityValues[message.source])
+		mqttPublish('luminosityUpdt',sensorValues[message.source]["luminosity"])
+		mqttPublish('temperatureUpdt',sensorValues[message.source]["temperature"])
 
 
 	elseif (topic == 'newRule') then
-		message = loadstring('return'..data)()
-
         print(message)
-        print(message.type)
-
-		rules[message["type"]] = message["parameters"]
-
+    	message = loadstring('return'..data)()
+        table.insert(rules[message["type"]],message["parameters"])
 
 	elseif (topic == 'delete') then
 		if(data == 'all') then
 			for key,value in pairs(rules) do
-				rules[key]=nil
+				rules[key]={}
 			end
 		else
 
-			message = loadstring('return'..data)()
-
-			for key,value in pairs(rules) do
-				if(value['type'] == message['type'] and value['timeBegin'] == message['timeBegin']) then
-					rules[key]=nil
+			for index,rule in pairs(rules[message["type"]]) do
+				if(next(rule) == nil and next(message["parameters"]) == nil) then
+					table.remove(rules[message["type"]],index)
+					break
+				end
+				if(rule[message["parameters"][1]] ~= nil) then
+					table.remove(rules[message["type"]],index)	
 					break
 				end
 			end
@@ -144,77 +145,85 @@ function messageReceived(topic,data)
 
 	end
 
-	-- count = 0
-
-	-- for rule,parameters in pairs(rules) do
-	-- 	act = true
-	-- 	count = count + 1
-
-	-- 	for parameter,value in pairs(parameters) do
-	-- 	  if(not checkParameter(parameter,value)) then
-	-- 	  	act = false
-	-- 	  	break
-	-- 	  end
-	-- 	end
-
-	-- 	if(act or (count==0)) then
-	-- 		applyRule(rule)
-	-- 	end
-	-- end
-
 	checkLights()
+	checkTemperature()
 
 end
 
 function checkLights()
-	if(rules["lightsOn"] ~= nil) then
-        count = 0
-		act = true
-		count = count + 1
 
-		for parameter,value in pairs(rules["lightsOn"]) do
-		  if(not checkParameter(parameter,value)) then
-		  	act = false
-		  	break
-		  end
-		end
+	act = checkParameters("lightsOn")
 
-		if(act or (count==0)) then
-			applyRule("lightsOn")
-		else
-			applyRule("lightsOff")
-		end
-
-	else 
+	if(act) then
+		applyRule("lightsOn")
+	else
 		applyRule("lightsOff")
 	end
+
 end
 
-function checkTemperature( ... )
-	-- body
+function checkTemperature()
+	-- Right now assuming that only one rule to control temperature will be active, if there were more it would be necessary to considerate which one
+	-- in order to get the correct temperature value to check
+
+	act = checkParameters("controlTemperature")
+	rule = rules["controlTemperature"][1]
+
+	if(act) then
+		if(temperatureValue < (rule["temperature"] - 2)) then
+			applyRule("airOn")
+		elseif(temperatureValue > (rule["temperature"]) + 2) then
+			applyRule("airOn")
+		else
+			applyRule("airOff")
+		end
+	else
+		applyRule("airOff")
+	end
+
 end
 
 function checkAlarm( ... )
 	-- body
 end
 
-function checkParameter(parameterType,value)
+function checkParameters(ruleType)
+
+	act = false
+
+	for index,rule in pairs(rules[ruleType]) do
+		actRule = true
+		for parameter,value in pairs(rule) do
+		  if(not checkParameter(parameter,value)) then
+		  	actRule = false
+		  	break
+		  end
+		end
+		if(actRule) then
+			act = true
+			break
+		end
+	end
+
+	return act
+end
+
+function checkParameter(parameterType,value) -- change to table
 
 	if(parameterType == "upperBoundLight") then
 		if (luminosityValue ~= nil and luminosityValue > value) then
 			return true
-		else
-			return false
 		end
-
 	elseif(parameterType == "lowerBoundLight") then
 		if (luminosityValue ~= nil and luminosityValue < value) then
         -- print("value is smaller")
 			return true
-		else
-			return false
 		end
+	elseif(parameterType == "temperature") then
+		return true
 	end
+
+	return false
 
 end
 
@@ -233,6 +242,18 @@ print("Applying rule: "..rule)
 		if(lights) then
 			lights = false
 			mqttPublish('lightsUpdt','off')
+		end
+	elseif(rule == "airOn") then
+		print("Ligar Ar Condicionado")
+		if(not airConditioning) then
+			airConditioning = true
+			mqttPublish('airUpdt','on')
+		end
+	elseif(rule == "airOff") then
+		print("Desligar Ar Condicionado")
+		if(airConditioning) then
+			airConditioning = false
+			mqttPublish('airUpdt','off')
 		end
 	end
 
@@ -255,11 +276,11 @@ function checkValues()
 	count = 0
 	sumLuminosity = 0
 
-	for i,luminosity in ipairs(luminosityValues) do
-		if(luminosity ~= 'undefined') then
-			sumLuminosity = sumLuminosity + luminosity
+	for i,info in ipairs(sensorValues) do
+		if(next(info) ~= nil) then
+			sumLuminosity = sumLuminosity + info.luminosity
 			count = count + 1
-			luminosityValues[i] = 'undefined'
+			sensorValues[i] = {}
 		else
 			print("Didn't received luminosity value from " .. i)
 		end

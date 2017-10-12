@@ -38,6 +38,22 @@
 			  $('#lights').text(msg.data).html();
 			});
 
+			socket.on('temperature', function(msg) {
+				console.log("Received: " + msg.data)
+			  var nDate = new Date();
+			  $('#readingsUpdated').text(nDate.getHours() + 'h:' + nDate.getMinutes() +
+			     'm:' + nDate.getSeconds() + 's').html();
+			  $('#temperatureLabel').text(msg.data).html();
+			});
+
+			socket.on('air', function(msg) {
+				console.log("Received: " + msg.data)
+			  var nDate = new Date();
+			  $('#readingsUpdated').text(nDate.getHours() + 'h:' + nDate.getMinutes() +
+			     'm:' + nDate.getSeconds() + 's').html();
+			  $('#air').text(msg.data).html();
+			});
+
 			// console.log("entered with state" + {{state}})
 			controlState({{state}})
 
@@ -61,8 +77,10 @@
 	<h1>Sala L516</h1>
 
 	<h3>Luminosidade : <span id="luminosity">{{luminosity}}</span></h3>
+	<h3>Temperatura : <span id="temperatureLabel">{{temperature}}</span></h3>
 	<br>
 	<h3>Luzes: <span id="lights">{{lightsLabel[lights]}}</span></h3>
+	<h3>Ar Condicionado: <span id="air">{{airLabel[air]}}</span></h3>
 	<h3>Regras: </h3>
 
 	{% if rules|length == 0 %}
@@ -151,7 +169,7 @@
 						<div>
 							<button class="button-newCondition-back" type="button" onclick="controlState('new condition')">Voltar</button>
 							
-							<button class="button-newCondition" type="submit" name="btn" value="createCondition">Adicionar Condição</button>
+							<button class="button-newCondition" type="submit" name="btn" value="createCondition" >Adicionar Condição</button>
 							
 						</div>
 					</div>

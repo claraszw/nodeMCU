@@ -23,6 +23,9 @@ var socket
    	changed = "changed"
    	init = "init"
 
+var currentSelectedRule
+
+
 function checkSameTime(rules,ruleTypes){
 
 	var selectedRule = document.getElementById('selectedRule').value;
@@ -68,13 +71,13 @@ function evaluateHour(rules,ruleTypes){
 		}
 	}
 
+	currentSelectedRule = selectedRule
 	document.getElementById('rule-text').innerHTML = ruleTypes[selectedRule]
 	document.getElementById('hourI-text').innerHTML = document.getElementById('hourI').value 
 	document.getElementById('hourE-text').innerHTML = document.getElementById('hourE').value
 	document.getElementById('minI-text').innerHTML = document.getElementById('minI').value
 	document.getElementById('minE-text').innerHTML = document.getElementById('minE').value
-	console.log("About to change state")
-	controlState('conditions',selectedRule);
+	controlState('conditions');
 }
 
 
@@ -98,7 +101,7 @@ function evaluateConditions(rules,ruleTypes,conditions,conditionTypes){
 	}
 }
 
-function controlState(state,selectedRule){
+function controlState(state){
 
 	console.log("Received state!: " + state)
 
@@ -131,10 +134,10 @@ function controlState(state,selectedRule){
 		document.getElementById('hourDiv').style.display = 'none'
 		document.getElementById('newConditionTypeDiv').style.display = 'none'
 		document.getElementById('newConditionValueDiv').style.display = 'none'
-		if(selectedRule == "controlTemperature"){
+		if(document.getElementById('rule-text').innerHTML == "Manter Temperatura"){
 			document.getElementById('temperature').style.display = 'block'
 		}
-		else if(selectedRule == "lightsOn"){
+		else if(document.getElementById('rule-text').innerHTML == "Acender Luzes"){
 			document.getElementById('temperature').style.display = 'none'
 		}
 	}
