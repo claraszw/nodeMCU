@@ -4,11 +4,11 @@ ERROR_LED = 1
 ip = nil
 
 MQTT_PORT = 1883
-MQTT_HOST = "192.168.0.7"
+MQTT_HOST = "192.168.1.6"
 
 -- Configure Wi-Fi
 wifi.setmode(wifi.STATION)
-wifi.sta.config("piocorreia","wfpcapto41")
+wifi.sta.config("sadock","esquilovoador")
 
 while ip == nil do
 	if(count>5) then

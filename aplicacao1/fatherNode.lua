@@ -1,10 +1,5 @@
 tableFunctions = require('rulesFunctions')
 
-
-MQTT_PORT = 1883
-MQTT_HOST = "192.168.0.7"
-delay = 15000000 --ms
-
 AIR_LED = 3
 LIGHT_LED = 6
 
@@ -14,11 +9,14 @@ gpio.mode(LIGHT_LED,gpio.OUTPUT)
 retry=true
 
 sensorValues = {{},{}}
-countError = {0,0}
-luminosityValue = 0
-temperatureValue = 0
+countError = {{luminosity =  0, temperature = 0, total = 0},{luminosity =  0, temperature = 0, total = 0}}
+count = {temperature = 0, luminosity = 0}
+sum = {luminosity = 0, temperature = 0}
+parameterValue = {luminosity = 0, temperature = 0}
 lights = false
 airConditioning = false
+
+ROOM = 'sala516'
 
 rules = {lightsOn = {}, controlTemperature = {}}
 
@@ -58,7 +56,7 @@ function mqttConnect()
             mqttRegister('sensorInfo')
             mqttRegister('newRule')
             mqttRegister('delete')
-            mqttPublish('configInit','sala516')
+            mqttPublish('configInit',ROOM)
             mqttPublish('request','sensorInfo')
             gpio.write(AIR_LED,gpio.LOW)
             gpio.write(LIGHT_LED,gpio.LOW)
@@ -115,11 +113,8 @@ function messageReceived(topic,data)
 					table.remove(rules[message["type"]],index)
 					break
 				end
-				for parameter,value in pairs(rule) do
-					if( rule[parameter] ~= nil) then
-						table.remove(rules[message["type"]],index)	
-					end
-					break
+				if( rule[next(rule)] ~= nil) then
+					table.remove(rules[message["type"]],index)	
 				end
 			end
 
@@ -149,7 +144,7 @@ function checkTemperature()
 	rule = rules["controlTemperature"][1]
 
 	if(act) then
-		if(temperatureValue < (rule["temperature"] - 2)) then
+		if(parameterValue["temperature"] < (rule["temperature"] - 2)) then
 			tableFunctions.rulesActions["airOn"]()
 		elseif(temperatureValue > (rule["temperature"]) + 2) then
 			tableFunctions.rulesActions["airOn"]()
@@ -189,60 +184,34 @@ end
 
 function checkValues()
 
-	countLuminosity = 0
-	sumLuminosity = 0
-
-	countTemperature = 0
-	sumTemperature = 0
+	sum["luminosity"] = 0
+	sum["temperature"] = 0
+	count["luminosity"] = 0
+	count["temperature"] = 0
 
 	for i,info in ipairs(sensorValues) do
 		if(next(info) ~= nil) then
-			if(info.luminosity ~= nil) then
-				if(info.luminosity ~= "error") then
-					sumLuminosity = sumLuminosity + info.luminosity
-					countLuminosity = countLuminosity + 1
-					countError[i] = 0
-				else
-					print('Error in ' .. i.. ' luminosity')
-					countError[i] = countError[i] + 1
-					if(countError[i] >= 5) then
-						mqttPublish('luminosityUpdt',"Error in ".. i)
-					end
-				end
-			end
-			if(info.temperature ~= nil) then
-				if(info.temperature ~= "error") then
-					sumTemperature = sumTemperature + info.temperature
-					countTemperature = countTemperature + 1
-				else
-					print('Error in ' .. i.. ' temperature')
-					if(countError[i] >= 5) then
-						mqttPublish('luminosityUpdt',"Error in ".. i)
-					end
-				end
-			end	
+			if(countError[i].total >= 5) then
+				mqttPublish('errorNode/fixed',i)
+			end 
+			countError[i].total = 0
+			tableFunctions.checkValue["average"]("temperature",info,i)
+			tableFunctions.checkValue["average"]("luminosity",info,i)
 			sensorValues[i] = {}
 		else
+			countError[i].total = countError[i].total + 1
+			if(countError[i].total >= 5) then
+				mqttPublish('errorNode',i)
+			end 
 			print("Didn't received Info from " .. i)
 		end
 	end
 
-	if countLuminosity > 0 then
-		luminosityValue = sumLuminosity/countLuminosity
-		mqttPublish('luminosityUpdt',luminosityValue)
-	else
-		luminosityValue = nil
-	end
-	if countTemperature > 0 then
-		temperatureValue = sumTemperature/countTemperature
-		mqttPublish('temperatureUpdt',temperatureValue)
-	else
-		temperatureValue = nil
-	end
+	tableFunctions.calculateValue["average"]("temperature")
+	tableFunctions.calculateValue["average"]("luminosity")
 
 	checkLights()
 	checkTemperature()
-
 
 	tmr.create():alarm(delay/1000,tmr.ALARM_SINGLE, function()
 		 checkValues()

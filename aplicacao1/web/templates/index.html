@@ -15,6 +15,8 @@
    <script src="{{url_for('static', filename='updates.js')}}"></script>
    <script type="text/javascript" charset="utf-8">
 
+   	var socket
+
 	   	$(document).ready(function() {
 			socket = io.connect('http://' + document.domain + ':' + location.port);
 
@@ -54,19 +56,37 @@
 			  $('#air').text(msg.data).html();
 			});
 
+			socket.on('disabled', function(msg){
+				console.log("ble")
+				if(msg.data == 'True'){
+					$('#disable').text("Enable").html();
+				}
+				else{
+					$('#disable').text("Disable").html();
+				}
+			})
+
+
 			// console.log("entered with state" + {{state}})
 			controlState({{state}})
 
 		});
 
-   	
-      function sendData(channel,data){
-      	console.log('in function' + channel)
-      	var value = document.getElementById(data).value
-      	console.log("Value: " + value)
-      	socket.emit(channel, value);
-      }
+	    function disabledPressed(){
 
+
+	    	if(document.getElementById("disable").name == 'enabled'){
+
+	      		$('#disable').text("Enable").html();
+	      		document.getElementById("disable").name = 'disabled'
+	    		socket.emit('disabled',"true")
+	    	}
+	    	else if(document.getElementById("disable").name == 'disabled') {
+	      		document.getElementById("disable").name = 'enabled'
+		      	$('#disable').text("Disable").html();
+	    		socket.emit('disabled',"false")
+	    	}
+	    }
    </script>
    
 </head>
@@ -75,6 +95,19 @@
 <body>
 
 	<h1>Sala L516</h1>
+		<button id="disable" onclick="disabledPressed()" name="enabled">Disable</button>
+
+	{% for node in errors %}
+		{% if node["total"] %}
+			<p> Erro no nó {{loop.index}}. Nenhuma informação recebida </p>
+		{% endif %}
+		{% if node["luminosity"] %}
+			<p> Erro no sensor de luminosidade do nó {{loop.index }}. </p>
+		{% endif %}
+		{% if node["temperature"] %}
+			<p> Erro no sensor de temperatura do nó {{loop.index }}. </p>
+		{% endif %}
+	{% endfor %}
 
 	<h3>Luminosidade : <span id="luminosity">{{luminosity}}</span></h3>
 	<h3>Temperatura : <span id="temperatureLabel">{{temperature}}</span></h3>
@@ -163,7 +196,18 @@
 			<div id="newConditionValueDiv">
 					<div class="newCondition">
 						<div>
-							<span  id="condition"></span> <input type="number" name="conditionValue" id="conditionValue">
+							<span  id="condition"></span> 
+							<div id="input-value">
+								<input type="number" name="conditionValue" id="conditionValue">
+							</div>
+							<div id="boolean-value">
+								<input type="radio" name="presence" value="Sim"/>Sim
+								<input type="radio" name="presence" value="Sim"/>Não
+							</div>
+							<div id="open-close">
+								<input type="radio" name="magnet" value="Aberta"/>Aberta
+								<input type="radio" name="magnet" value="Fechada"/>Fechada
+							</div>
 						</div>
 						<br>
 						<div>

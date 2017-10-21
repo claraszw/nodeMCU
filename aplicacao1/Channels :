@@ -3,23 +3,26 @@ Channels :
 
 Pai publishes:
 
-	luminosityUpdt  (um canal para todos os parâmetros?)
+	luminosityUpdt
+	temperatureUpdt
+	presenceUpdt
 	lightsUpdt
+	airUpdt
 	configInit
 	request
 
 
 Pai listens:
 
-	luminosity
+	sensorInfo
 	newRule
 	delete
-	request
+	requestValues
 
 
 Filho publishes:
 
-	luminosity
+	sensorInfo
 
 Filho listens:
 
@@ -31,5 +34,8 @@ Raspberry publishes:
 Raspberry listens:
 
 	luminosityUpdt
+	temperatureUpdt
+	presenceUpdt
 	lightsUpdt
+	airUpdt
 	configInit

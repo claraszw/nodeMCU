@@ -24,7 +24,7 @@ var socket
    	init = "init"
 
 var currentSelectedRule
-
+var currentSelectedCondition
 
 function checkSameTime(rules,ruleTypes){
 
@@ -55,11 +55,8 @@ function checkSameTime(rules,ruleTypes){
 }
 
 function evaluateHour(rules,ruleTypes){
-	console.log("in evaluateHour");
 
 	var selectedRule = document.getElementById('selectedRule').value;
-
-	console.log("In evaluateHour, selectedRule: ",selectedRule)
 
 	if(selectedRule == "controlTemperature"){
 		if(checkSameTime(rules,ruleTypes)){
@@ -97,6 +94,8 @@ function evaluateConditions(rules,ruleTypes,conditions,conditionTypes){
 	}
 	else{
 		document.getElementById('condition').innerHTML = conditionTypes[value];
+		currentSelectedCondition = value;
+		console.log(value)
 		controlState('new condition type');
 	}
 }
@@ -147,6 +146,22 @@ function controlState(state){
 		document.getElementById('newConditionValueDiv').style.display = 'none'
 	}
 	else if(state =="new condition type"){
+		console.log(currentSelectedCondition)
+		if(currentSelectedCondition == 'window' || currentSelectedCondition == 'door'){
+			document.getElementById('input-value').style.display = 'none'
+			document.getElementById('boolean-value').style.display = 'none'
+			document.getElementById('open-close').style.display = 'block'
+		}
+		else if(currentSelectedCondition == 'presence'){
+			document.getElementById('input-value').style.display = 'none'
+			document.getElementById('boolean-value').style.display = 'block'
+			document.getElementById('open-close').style.display = 'none'
+		}
+		else{
+			document.getElementById('input-value').style.display = 'block'
+			document.getElementById('boolean-value').style.display = 'none'
+			document.getElementById('open-close').style.display = 'none'
+		}
 		document.getElementById('newConditionButton').style.display = 'none'
 		document.getElementById('newConditionTypeDiv').style.display = 'none'
 		document.getElementById('newConditionValueDiv').style.display = 'block'

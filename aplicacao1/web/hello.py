@@ -16,10 +16,11 @@ socketio = SocketIO(app)
 def on_connect(client,userdata,flags,rc):
     print("Connected with result code " + str(rc))
 
-    client.subscribe("luminosityUpdt")
+    client.subscribe("luminosityUpdt/#")
+    client.subscribe("temperatureUpdt/#")
+    client.subscribe("errorNode/#")
     client.subscribe("lightsUpdt")
     client.subscribe("configInit")
-    client.subscribe("temperatureUpdt")
     client.subscribe("airUpdt")
 
     #initialize
@@ -27,41 +28,62 @@ def on_connect(client,userdata,flags,rc):
 # The callback for when a PUBLISH message is received from the ESP8266.
 def on_message(client, userdata, message):
     #socketio.emit('my variable')
+
+    global temperatureUpdt
+    global luminosityUpdt
+
     print("Received message '" + str(message.payload) + "' on topic '"
         + message.topic + "' with QoS " + str(message.qos))
 
     if message.topic == "luminosityUpdt":
-        print("luminosity update")
-        luminosityUpdt["value"] = message.payload;
+        luminosityUpdt = message.payload
         socketio.emit('luminosity', {'data': message.payload})
+    
+    if message.topic == "luminosityUpdt/error":
+        errors[int(message.payload) - 1]["luminosity"] = True
+    
+    if message.topic == "luminosityUpdt/fixed":
+        errors[int(message.payload) - 1]["luminosity"] = False 
+        # socketio.emit('luminosity', {'data': message.payload})
+
+    if message.topic == "temperatureUpdt":
+        temperatureUpdt = message.payload;
+        socketio.emit('temperature', {'data': message.payload})
+    
+    if message.topic == "temperatureUpdt/error":
+        errors[int(message.payload) - 1]["temperature"] = True
+    
+    if message.topic == "temperatureUpdt/fixed":
+        errors[int(message.payload) - 1]["temperature"] = False 
+
+    if message.topic == "errorNode":
+        errors[int(message.payload) - 1]["total"] = True
+    
+    if message.topic == "errorNode/fixed":
+        errors[int(message.payload) - 1]["total"] = False
+
+    if message.topic == "airUpdt" :
+        airUpdt = message.payload;
+        socketio.emit('air', {'data': airLabel[message.payload]})
 
     if message.topic == "lightsUpdt" :
     	print("lights update")
-        lightsUpdt["value"] = message.payload;
+        lightsUpdt = message.payload;
         socketio.emit('lights', {'data': lightsLabel[message.payload]})
-
-    if message.topic == "temperatureUpdt":
-        print("luminosity update")
-        temperatureUpdt["value"] = message.payload;
-        socketio.emit('temperature', {'data': message.payload})
-
-    if message.topic == "airUpdt" :
-        airUpdt["value"] = message.payload;
-        socketio.emit('air', {'data': airLabel[message.payload]})
 
     if message.topic == "configInit":
     	for rule in rules:
     		checkRuleTime(rule,"send")
 
 
-ruleTypes = {"lightsOn":"Acender Luzes", "controlTemperature": "Manter Temperatura"}
-conditionTypes = {"lowerBoundLight": "Luminosidade Abaixo De","upperBoundLight": "Luminosidade Acima De"}
-condition = {}
-conditions = {"lowerBoundLight": 'None',"upperBoundLight":'None'}
-
-fileRules = open('rules.txt','r')
-
-rules = []
+# Rule Template = {
+# 	'endString': 'Ate: 11:00',
+#  	'beginString': 'De: 09:00',
+#  	'parameters': {'lowerBoundLight': 300, 'upperBoundLight': 'None'},
+#  	'type': 'lightsOn',
+#   'timeEnd': 11,
+#  	'timeBegin': 9,
+# }
 
 mqttc=mqtt.Client()
 mqttc.on_connect = on_connect
@@ -69,8 +91,30 @@ mqttc.on_message = on_message
 mqttc.connect("localhost",1883,60)
 mqttc.loop_start()
 
+
 actions = {}
 actionTimer = {"nextTimer" : None, 'firstTime' : True}
+
+ruleTypes = {"lightsOn":"Acender Luzes", "controlTemperature": "Manter Temperatura"}
+conditionTypes = {"lowerBoundLight": "Luminosidade Abaixo De","upperBoundLight": "Luminosidade Acima De", "presence": "Existe Presenca", "door": "Porta", "window": "Janela"}
+condition = {}
+conditions = {"lowerBoundLight": 'None',"upperBoundLight":'None', "presence":"None", "door":"None","window":"None"}
+lightsUpdt = "off"
+lightsLabel = {"off" : "Apagadas", "on": "Acesas"}
+airUpdt = "off"
+airLabel = {"off" : "Desligado", "on": "Ligado"}
+
+errors = [{"luminosity":False, "temperature":False, "total":False},{"luminosity":False, "temperature":False, "total":False}]
+
+luminosityUpdt = 0
+temperatureUpdt = 0
+temperatureParam = 22
+disabled = False
+
+fileRules = open('rules.txt','r')
+
+rules = []
+
 
 nextTime = 100
 
@@ -78,15 +122,8 @@ newRule = {
 	'type': 'None'
 }
 
-aGlobalTest = 25
-luminosityUpdt = 0
-temperatureUpdt = 0
-temperatureParam = 22
+parentNodeDisabled = False
 
-lightsUpdt = "off"
-lightsLabel = {"off" : "Apagadas", "on": "Acesas"}
-airUpdt = "off"
-airLabel = {"off" : "Desligado", "on": "Ligado"}
 
 templateData = {
 		'async_mode':socketio.async_mode,
@@ -101,17 +138,9 @@ templateData = {
 		'airLabel': airLabel,
 		'temperature': temperatureUpdt,
 		'state':'init',
-		'temperatureParam':temperatureParam
+		'temperatureParam':temperatureParam,
+		'errors': errors,
 };
-
-# Rule Template = {
-# 	'endString': 'Ate: 11:00',
-#  	'beginString': 'De: 09:00',
-#  	'parameters': {'lowerBoundLight': 300, 'upperBoundLight': 'None'},
-#  	'type': 'lightsOn',
-#   'timeEnd': 11,
-#  	'timeBegin': 9,
-# }
 
 
 def addRule(rule):
@@ -212,6 +241,7 @@ def getNextRuleTime():
 def createTimer():
 
 	global nextTime
+	totaltime = 0
 
 	print("ABOUT TO CREAT TIMER FOR NEXT TIME: "+ str(nextTime))
 
@@ -316,11 +346,9 @@ def hour_to_number(hour,minutes):
 
 @app.route('/<state>/<luminosity>/<rule>/<begin>/<end>', methods=['GET', 'POST'])
 @app.route('/', methods=['GET', 'POST'])
-def hello_world(state="init",luminosity=0,data={}):
+def hello_world():
 
-	# luminosityUpdt = luminosity
-	# stateUpdt = state
-	# dataUpdt = data
+	print(templateData['state'])
 
 	return render_template('index.html',**templateData);
 
@@ -331,8 +359,7 @@ def new():
 	global nextTime
 	global luminosityUpdt
 	global temperatureUpdt
-
-	print("in new: " + str(actions))
+	global templateData
 
 	btn = request.form['btn']
 
@@ -353,7 +380,15 @@ def new():
 	elif(btn == "createCondition"):
 
 		conditionType = request.form.get('conditionType')
-		conditions[str(conditionType)] = ast.literal_eval(request.form.get('conditionValue'))
+
+		if(str(conditionType) == "presence"):
+			value = request.form.get("presence")
+		elif(str(conditionType) == "window" or str(conditionType) == "door"):
+			value = request.form.get("magnet")
+		else:
+			value = ast.literal_eval(request.form.get('conditionValue'))
+
+		conditions[str(conditionType)] = value
 
 		templateData['state']='conditions'
 
@@ -477,9 +512,11 @@ def new():
 		# templateData['minI']= minuteBegin
 		# templateData['minE']= minuteEnd
 
-	templateData['luminosity']=luminosityUpdt
+	templateData['luminosity'] = luminosityUpdt
+	templateData['temperature'] = temperatureUpdt
 	templateData['lights']=lightsUpdt
 	templateData['air']=airUpdt
+
 	return redirect('/')
 
 @app.route('/deleteRule',methods=['GET', 'POST'])
@@ -517,6 +554,12 @@ def deleteRule():
 @socketio.on('my event')
 def handle_my_custom_event(json):
     print('received json data here: ' + str(json))
+
+@socketio.on('disabled')
+def toggleDisabled(message):
+	mqttc.publish('disabled',message)
+	
+
 
 @socketio.on('connect')
 def test_connect():

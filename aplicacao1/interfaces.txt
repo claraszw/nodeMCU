@@ -7,12 +7,19 @@ Interfaces:
 
 	{
 		source = number
-		luminosity = number,
-		temperature = number
+		info = {
+			luminosity = number,
+			temperature = number
+			presence = boolean
+			window = boolean
+			door = boolean
+		}
 	}
 
+	Um nó filho envia essa mensagem contendo no campo info apenas as informações dos sensores que ele possui, caso ele possua um sensor mas o valor não tenha sido capturado corretamente, o valor "error" é enviado no campo correspondente da tabela info.
 
-	Rule Sent from Raspberry:  // Right now the pair type - parameters define an unique rule
+
+	Rule Sent from Raspberry:  // the pair (type,parameters) define an unique rule
 	{
 		type = string,
 		parameters = { 
@@ -27,4 +34,47 @@ Interfaces:
 
 
 
-	-----------------------------------------------------------------
+	Values stored by fatherNode:
+
+	{
+		{ 
+			luminosity = number,
+			temperature = number
+			presence = boolean
+			window = boolean
+			door = boolean
+		}
+	}
+
+
+
+
+tipo de condição é único, portanto busca-se na tabela do tipo da regra a regra que possua a primeira condição, ou que também seja vazia.
+
+Hello.py:
+
+rule = {
+		'type': 'lightsOn',
+		'parameters': {
+	   		'lowerBoundLight': 300,
+	   		 'upperBoundLight': 'None'
+   		 },
+		'temperature': 0,
+		'timeBegin': 9.0
+		'timeEnd': 13.0,
+		'endString': 'Ate: 13:00',
+		'beginString': 'De: 09:00',
+	}
+
+rules = rule[]
+
+actions = {
+	'9.0': {
+		'ruleBegin' = rule[],
+		'ruleDelete' = rule[]
+	},
+	'11.0': {
+		'ruleBegin' = rule[],
+		'ruleDelete' = rule[]
+	}
+}

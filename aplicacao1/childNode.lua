@@ -1,6 +1,6 @@
 
 
-NODE_ID = 1
+NODE_ID = 2
 delay = 5000000 --ms
 
 send = true
@@ -111,7 +111,7 @@ function collectData()
 	if send then
 
 		luminosityValue = adc.read(0)
-		temperatureValue = getTemperature(DHT11_PIN)
+		temperatureValue = nil--getTemperature(DHT11_PIN)
 		print('Luminosity: '.. luminosityValue)
 
 		message = { source = NODE_ID, info = {luminosity = luminosityValue, temperature = temperatureValue} }
