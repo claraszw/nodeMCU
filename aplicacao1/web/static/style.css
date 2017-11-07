@@ -4,7 +4,39 @@ body {
 	background: #fff;
 
 	margin: 2.5%;
+	margin-left: 50px;
+	margin-top: 50px;
  }
+
+h3{
+	font-weight: 500;
+	color: #578FD6;
+}
+
+.rules-title{
+	margin-top: 50px;
+	font-size: 20px;
+	font-weight: normal;
+}
+
+.header{
+	display: flex;
+}
+
+.header button{
+	height: 40px;
+	margin-top: 20px;
+	width: 152px;
+	margin-left: 70px;
+}
+
+.header h1{
+	font-weight: normal;
+}
+
+.main-content{
+	margin-left: 20px;
+}
 
  .dropdown select{
    	width: 200px;
@@ -93,10 +125,6 @@ body {
 	cursor: pointer;
 }
 
-.button-delete{
-	margin-left: 1%;
-}
-
 .newCondition{
 	display: flex;
 	flex-direction: column
@@ -106,10 +134,11 @@ body {
 	display: flex;
 }
 
-.input-value{
+.number-value, .input-value{
 	margin-left: 10px;
-	margin-top:-10px;
+	margin-top:-5px;
 }
+
 
 #evaluatedHour, #newRuleButtonsDiv{
 	display: none;

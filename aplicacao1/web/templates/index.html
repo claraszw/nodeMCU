@@ -122,154 +122,162 @@
 
 <body>
 
-	<h1>Sala L516</h1>
+	<div class="header">
+		<h1>Sala L516</h1>
 		<button id="disable" onclick="disabledPressed()" name="enabled">Disable</button>
-
-	<div class="errorLabel">
-		<span id="errors"></span>
 	</div>
 
-	<h3>Luminosidade : <span id="luminosity">{{luminosity}}</span></h3>
-	<h3>Temperatura : <span id="temperatureLabel">{{temperature}}</span></h3>
-	<h3>Presença : <span id="presence">{{presence}}</span></h3>
-	<br>
-	<h3>Luzes: <span id="lights">{{lightsLabel[lights]}}</span></h3>
-	<h3>Ar Condicionado: <span id="air">{{airLabel[air]}}</span></h3>
-	<h3>Regras: </h3>
+	<div class="main-content">
 
-	{% if rules|length == 0 %}
-		<span class="empty-label">Não há Regras</span>
-	{% else %}
-		<form method = "POST" action="{{url_for('deleteRule')}}">
-			<button name="btn" value="all" class="button-delete">Excluir Todas</button>
-		</form>
-	{% endif %}
+		<div class="errorLabel">
+			<span id="errors"></span>
+		</div>
 
+		<div class="info">
+			<h3>Luminosidade : <span id="luminosity">{{luminosity}}</span></h3>
+			<h3>Temperatura : <span id="temperatureLabel">{{temperature}}</span></h3>
+			<h3>Presença : <span id="presence">{{presence}}</span></h3>
+			<br>
+			<h3>Luzes: <span id="lights">{{lightsLabel[lights]}}</span></h3>
+			<h3>Ar Condicionado: <span id="air">{{airLabel[air]}}</span></h3>
+		</div>
 
-	<ul>
+		<h4 class="rules-title">Regras: </h3>
 
-	{% for rule in rules %}
-		<div class="rules">
-			<span>
-				<li>{{ruleTypes[rule["type"]]}}</li>
-				{% if rule["type"] == "controlTemperature"%}
-					<span>Temperatura: {{rule["temperature"]}}ºC</span>
-				{% endif %}
-				<ul>
-					{% for key,value in rule["parameters"].items() %}
-						{% if value != 'None' %}
-							<li>{{conditionTypes[key]}}: {{value}}</li>
-						{% endif %}
-					{% endfor %}
-				</ul>
-				<span>{{rule['beginString']}}</span>  <span>{{rule['endString']}}</span>
-			</span>
+		{% if rules|length == 0 %}
+			<span class="empty-label">Não há Regras</span>
+		{% else %}
 			<form method = "POST" action="{{url_for('deleteRule')}}">
-				<button name="btn" value="{{rule}}" class="button-delete" style="margin:auto; margin-left:15px; ">Excluir</button>
+				<button name="btn" value="all" class="button-delete">Excluir Todas</button>
 			</form>
-		</div>
-	{% endfor %}
-	</ul>
-	<form style="margin-top:20px" method="POST" action="{{url_for('new')}}">
-		<div class="newRule" id="newRuleDiv">
-		<div class="rule-dropdown">
-			<span>Regra:</span>
-			<div class="dropdown">
-				<select  name="ruleType" id="selectedRule">
-				{% for key,value in ruleTypes.items() %}
-					<option value="{{ key }}">{{value}}</option>
-				{% endfor %}
-				</select>
-			</div> 
-		</div>
-		</div>
-		<div class="hour" id="hourDiv">
-			<span>De   :   <input class="hour-input" type="text" name="hourI" id="hourI" value="09" pattern="[0-9]{2}"> : <input class="hour-input" type="text" name="minI" id="minI" value="00" pattern="[0-9]{2}" >
-			<br> 
-			<span>Até: <input class="hour-input" type="text" name="hourE" id="hourE" pattern="[0-9]{2}" value="11"> : <input class="hour-input" type="text" name="minE" id="minE" pattern="[0-9]{2}" value="00" > </span>
-			<br>
-			<div class="buttons">
-				<button class="btn" type="submit" name="btn" value="cancelCreateRule"> <img class="btn-icon" src="{{ url_for('static', filename='close_red.png')}}"><label class="btn-label">Cancelar</label> </button>
-				<button class="btn" onclick="evaluateHour({{rules}},{{ruleTypes}})" type="button"><img class="btn-next-icon" src="{{ url_for('static', filename='next_icon.png')}}"><label class="btn-next-label">Próximo</label> </button>
-			</div>
-		</div>
-		<div class="evaluatedHour" id="evaluatedHour">
-			Regra: <span id="rule-text">{{ruleTypes[rule]}}</span><br>
-			De: <span id="hourI-text">{{hourI}}</span>:<span id="minI-text">{{minI}}</span>
-			Até: <span id="hourE-text">{{hourE}}</span>:<span id="minE-text">{{minE}}</span>
-		</div>
-		<div class="conditions" id="conditionsDiv">
+		{% endif %}
 
-			<div class="temperature" id="temperature">
-				<label for="temperature">Temperatura:</label><input type="number" min="15" max="32" value="{{temperatureParam}}" name="temperature"><span>ºC</span>
-			</div>
 
-			<h4>Condições:</h4>
+		<ul>
 
-				<ul>
-				{% for key,value in conditions.items() %}
-					{%if value != 'None' %}
-					<span style="display:flex;">
-						<li>{{conditionTypes[key]}}: {{value}}</li>
-						<button name="btn" value="{{key}}" style="margin:auto; margin-left:15px; ">Excluir</button>
-					</span>
-					{%endif%}
-				{% endfor %}
-				</ul>
-
-			<br>
-
-			<button id="newConditionButton" class="btn" type="button" onclick="controlState('new condition')"><img class="btn-icon" src="{{ url_for('static', filename='add_icon.png')}}"><label onclick="controlState('new condition')" class="btn-label"> Nova Condição</label></button>
-				
-			<div id="newConditionValueDiv">
-					<div class="newCondition">
-						<div class="condition-value">
-							<span  id="condition"></span> 
-							<div id="input-value">
-								<input type="number" name="conditionValue" id="conditionValue">
-							</div>
-							<div class="input-value" id="boolean-value">
-								<input type="radio" name="presence" value="Sim"/>Sim
-								<input type="radio" name="presence" value="Nao"/>Não
-							</div>
-							<div class="input-value" id="open-close">
-								<input type="radio" name="magnet" value="Aberta"/>Aberta
-								<input type="radio" name="magnet" value="Fechada"/>Fechada
-							</div>
-						</div>
-						<br>
-						<div class="buttons">
-							<button class="btn" type="button" onclick="controlState('conditions')"><img class="btn-next-icon" src="{{ url_for('static', filename='back_icon.png')}}"><label class="btn-next-label">Voltar</label></button>
-							<button class="btn" type="submit" name="btn" value="createCondition" ><img class="btn-check-icon" src="{{ url_for('static', filename='check_icon.png')}}"><label class="btn-label">Adicionar Condição</label></button>
-							
-						</div>
-					</div>
-			</div>
-			<div class="newConditions" id="newConditionTypeDiv">
-				<div class="condition-dropdown">
-					<span>Condição: </span>
-					<div class="dropdown">
-						<select name="conditionType" id="conditionTypeSelected">
-						{% for key,value in conditionTypes.items() %}
-							<option value="{{key}}">{{value}}</option>
+		{% for rule in rules %}
+			<div class="rules">
+				<span>
+					<li>{{ruleTypes[rule["type"]]}}</li>
+					{% if rule["type"] == "controlTemperature"%}
+						<span>Temperatura: {{rule["temperature"]}}ºC</span>
+					{% endif %}
+					<ul>
+						{% for key,value in rule["parameters"].items() %}
+							{% if value != 'None' %}
+								<li>{{conditionTypes[key]}}: {{value}}</li>
+							{% endif %}
 						{% endfor %}
-						</select>
-					</div>
-				</div>
-				<div class="buttons" style="margin-left: -10px">
-					<button class="btn" type="button" onclick="controlState('conditions')"><img class="btn-next-icon" src="{{ url_for('static', filename='back_icon.png')}}"><label style="margin-left:10px" class="btn-next-label">Voltar</label></button>
-					<button class="btn" type="button" onclick="evaluateConditions({{rules}},{{ruleTypes}},{{conditions}},{{conditionTypes}})"><img class="btn-next-icon" src="{{ url_for('static', filename='next_icon.png')}}"><label class="btn-next-label">Próximo</label> </button>
+					</ul>
+					<span>{{rule['beginString']}}</span>  <span>{{rule['endString']}}</span>
+				</span>
+				<form method = "POST" action="{{url_for('deleteRule')}}">
+					<button name="btn" value="{{rule}}" class="btn" style="margin-top: 10px;"><img class="btn-next-icon" src="{{ url_for('static', filename='trash_can.png')}}"><label class="btn-next-label">Excluir</label></button>
+				</form>
+			</div>
+		{% endfor %}
+		</ul>
+		<form style="margin-top:20px" method="POST" action="{{url_for('new')}}">
+			<div class="newRule" id="newRuleDiv">
+			<div class="rule-dropdown">
+				<span>Regra:</span>
+				<div class="dropdown">
+					<select  name="ruleType" id="selectedRule">
+					{% for key,value in ruleTypes.items() %}
+						<option value="{{ key }}">{{value}}</option>
+					{% endfor %}
+					</select>
+				</div> 
+			</div>
+			</div>
+			<div class="hour" id="hourDiv">
+				<span>De   :   <input class="hour-input" type="text" name="hourI" id="hourI" value="09" pattern="[0-9]{2}"> : <input class="hour-input" type="text" name="minI" id="minI" value="00" pattern="[0-9]{2}" >
+				<br> 
+				<span>Até: <input class="hour-input" type="text" name="hourE" id="hourE" pattern="[0-9]{2}" value="11"> : <input class="hour-input" type="text" name="minE" id="minE" pattern="[0-9]{2}" value="00" > </span>
+				<br>
+				<div class="buttons">
+					<button class="btn" type="submit" name="btn" value="cancelCreateRule"> <img class="btn-icon" src="{{ url_for('static', filename='close_red.png')}}"><label class="btn-label">Cancelar</label> </button>
+					<button class="btn" onclick="evaluateHour({{rules}},{{ruleTypes}})" type="button"><img class="btn-next-icon" src="{{ url_for('static', filename='next_icon.png')}}"><label class="btn-next-label">Próximo</label> </button>
 				</div>
 			</div>
-		</div>	
+			<div class="evaluatedHour" id="evaluatedHour">
+				Regra: <span id="rule-text">{{ruleTypes[rule]}}</span><br>
+				De: <span id="hourI-text">{{hourI}}</span>:<span id="minI-text">{{minI}}</span>
+				Até: <span id="hourE-text">{{hourE}}</span>:<span id="minE-text">{{minE}}</span>
+			</div>
+			<div class="conditions" id="conditionsDiv">
 
-		<div id="newRuleButtonsDiv">
-			<button class="btn" type="submit" name="btn" value="cancelCreateRule"><img class="btn-icon" src="{{ url_for('static', filename='close_red.png')}}"><label class="btn-label">Cancelar</label></button>
-			<button class="btn" type="submit" name="btn" value="createRule"><img class="btn-check-icon	" src="{{ url_for('static', filename='check_icon.png')}}"><label class="btn-label">Criar Regra</label> </button>
-		</div>
-		</form>
-		
-		<button id="newRuleButton" class="btn" onclick="controlState('new rule')"><img class="btn-icon" src="{{ url_for('static', filename='add_icon.png')}}"><label class="btn-label"> Nova Regra</label></button>
+				<div class="temperature" id="temperature">
+					<label for="temperature">Temperatura:</label><input type="number" min="15" max="32" value="{{temperatureParam}}" name="temperature"><span>ºC</span>
+				</div>
 
+				<h4>Condições:</h4>
+
+					<ul>
+					{% for key,value in conditions.items() %}
+						{%if value != 'None' %}
+						<span style="display:flex;">
+							<li>{{conditionTypes[key]}}: {{value}}</li>
+							<button name="btn" class="btn" value="{{key}}" style="margin-left: 10px; margin-top: -5px; "><img class="btn-next-icon" src="{{ url_for('static', filename='trash_can.png')}}"><label class="btn-next-label">Excluir</label></button>
+						</span>
+						{%endif%}
+					{% endfor %}
+					</ul>
+
+				<br>
+
+				<button id="newConditionButton" class="btn" type="button" onclick="controlState('new condition')"><img class="btn-icon" src="{{ url_for('static', filename='add_icon.png')}}"><label onclick="controlState('new condition')" class="btn-label"> Nova Condição</label></button>
+					
+				<div id="newConditionValueDiv">
+						<div class="newCondition">
+							<div class="condition-value">
+								<span  id="condition"></span> 
+								<div class="number-value" id="input-value">
+									<input type="number" name="conditionValue" id="conditionValue">
+								</div>
+								<div class="input-value" id="boolean-value">
+									<input type="radio" name="presence" value="Sim"/>Sim
+									<input type="radio" name="presence" value="Nao"/>Não
+								</div>
+								<div class="input-value" id="open-close">
+									<input type="radio" name="magnet" value="Aberta"/>Aberta
+									<input type="radio" name="magnet" value="Fechada"/>Fechada
+								</div>
+							</div>
+							<br>
+							<div class="buttons">
+								<button class="btn" type="button" onclick="controlState('conditions')"><img class="btn-next-icon" src="{{ url_for('static', filename='back_icon.png')}}"><label class="btn-next-label">Voltar</label></button>
+								<button class="btn" type="submit" name="btn" value="createCondition" ><img class="btn-check-icon" src="{{ url_for('static', filename='check_icon.png')}}"><label class="btn-label">Adicionar Condição</label></button>
+								
+							</div>
+						</div>
+				</div>
+				<div class="newConditions" id="newConditionTypeDiv">
+					<div class="condition-dropdown">
+						<span>Condição: </span>
+						<div class="dropdown">
+							<select name="conditionType" id="conditionTypeSelected">
+							{% for key,value in conditionTypes.items() %}
+								<option value="{{key}}">{{value}}</option>
+							{% endfor %}
+							</select>
+						</div>
+					</div>
+					<div class="buttons" style="margin-left: -10px">
+						<button class="btn" type="button" onclick="controlState('conditions')"><img class="btn-next-icon" src="{{ url_for('static', filename='back_icon.png')}}"><label style="margin-left:10px" class="btn-next-label">Voltar</label></button>
+						<button class="btn" type="button" onclick="evaluateConditions({{rules}},{{ruleTypes}},{{conditions}},{{conditionTypes}})"><img class="btn-next-icon" src="{{ url_for('static', filename='next_icon.png')}}"><label class="btn-next-label">Próximo</label> </button>
+					</div>
+				</div>
+			</div>	
+
+			<div id="newRuleButtonsDiv">
+				<button class="btn" type="submit" name="btn" value="cancelCreateRule"><img class="btn-icon" src="{{ url_for('static', filename='close_red.png')}}"><label class="btn-label">Cancelar</label></button>
+				<button class="btn" type="submit" name="btn" value="createRule"><img class="btn-check-icon	" src="{{ url_for('static', filename='check_icon.png')}}"><label class="btn-label">Criar Regra</label> </button>
+			</div>
+			</form>
+			
+			<button id="newRuleButton" class="btn" onclick="controlState('new rule')"><img class="btn-icon" src="{{ url_for('static', filename='add_icon.png')}}"><label class="btn-label"> Nova Regra</label></button>
+
+	</div>
 </body>
 </html>
