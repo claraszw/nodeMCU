@@ -32,6 +32,14 @@
 			  $('#luminosity').text(msg.data).html();
 			});
 
+			socket.on('presence', function(msg) {
+				console.log("Received: " + msg.data)
+			  var nDate = new Date();
+			  $('#readingsUpdated').text(nDate.getHours() + 'h:' + nDate.getMinutes() +
+			     'm:' + nDate.getSeconds() + 's').html();
+			  $('#presence').text(msg.data).html();
+			});
+
 			socket.on('lights', function(msg) {
 				console.log("Received: " + msg.data)
 			  var nDate = new Date();
@@ -64,7 +72,27 @@
 				else{
 					$('#disable').text("Disable").html();
 				}
-			})
+			});
+
+			socket.on('error', function(msg){
+				console.log("RECEIVED ERROR"+msg)
+				var errorLabel = "";
+				var errors = msg.data;
+				for(i=0; i<errors.length; i++){
+					var node = errors[i]
+					console.log("IN FOR" + node)
+					if(node["total"]){
+						errorLabel = errorLabel + "Erro no nó " + (i+1) + ". Nenhuma informação recebida. \ ";
+					}
+					if(node["luminosity"]){
+						errorLabel = errorLabel + "Erro no sensor de luminosidade do nó " + (i+1) + ". \ ";
+					}
+					if(node["temperature"]){
+						errorLabel = errorLabel + "Erro no sensor de temperatura do nó " + (i+1) + ". \ ";
+					}
+				}
+				$('#errors').text(errorLabel).html();
+			});
 
 
 			// console.log("entered with state" + {{state}})
@@ -97,20 +125,13 @@
 	<h1>Sala L516</h1>
 		<button id="disable" onclick="disabledPressed()" name="enabled">Disable</button>
 
-	{% for node in errors %}
-		{% if node["total"] %}
-			<p> Erro no nó {{loop.index}}. Nenhuma informação recebida </p>
-		{% endif %}
-		{% if node["luminosity"] %}
-			<p> Erro no sensor de luminosidade do nó {{loop.index }}. </p>
-		{% endif %}
-		{% if node["temperature"] %}
-			<p> Erro no sensor de temperatura do nó {{loop.index }}. </p>
-		{% endif %}
-	{% endfor %}
+	<div class="errorLabel">
+		<span id="errors"></span>
+	</div>
 
 	<h3>Luminosidade : <span id="luminosity">{{luminosity}}</span></h3>
 	<h3>Temperatura : <span id="temperatureLabel">{{temperature}}</span></h3>
+	<h3>Presença : <span id="presence">{{presence}}</span></h3>
 	<br>
 	<h3>Luzes: <span id="lights">{{lightsLabel[lights]}}</span></h3>
 	<h3>Ar Condicionado: <span id="air">{{airLabel[air]}}</span></h3>
@@ -149,21 +170,28 @@
 		</div>
 	{% endfor %}
 	</ul>
-	<form method="POST" action="{{url_for('new')}}">
+	<form style="margin-top:20px" method="POST" action="{{url_for('new')}}">
 		<div class="newRule" id="newRuleDiv">
-			<span>Regra: 
-			<select name="ruleType" id="selectedRule">
-			{% for key,value in ruleTypes.items() %}
-				<option value="{{ key }}">{{value}}</option>
-			{% endfor %}
-			</select></span>
+		<div class="rule-dropdown">
+			<span>Regra:</span>
+			<div class="dropdown">
+				<select  name="ruleType" id="selectedRule">
+				{% for key,value in ruleTypes.items() %}
+					<option value="{{ key }}">{{value}}</option>
+				{% endfor %}
+				</select>
+			</div> 
+		</div>
 		</div>
 		<div class="hour" id="hourDiv">
 			<span>De   :   <input class="hour-input" type="text" name="hourI" id="hourI" value="09" pattern="[0-9]{2}"> : <input class="hour-input" type="text" name="minI" id="minI" value="00" pattern="[0-9]{2}" >
 			<br> 
 			<span>Até: <input class="hour-input" type="text" name="hourE" id="hourE" pattern="[0-9]{2}" value="11"> : <input class="hour-input" type="text" name="minE" id="minE" pattern="[0-9]{2}" value="00" > </span>
 			<br>
-			<button class="button-newCondition-next" onclick="evaluateHour({{rules}},{{ruleTypes}})" type="button">Próximo</button>
+			<div class="buttons">
+				<button class="btn" type="submit" name="btn" value="cancelCreateRule"> <img class="btn-icon" src="{{ url_for('static', filename='close_red.png')}}"><label class="btn-label">Cancelar</label> </button>
+				<button class="btn" onclick="evaluateHour({{rules}},{{ruleTypes}})" type="button"><img class="btn-next-icon" src="{{ url_for('static', filename='next_icon.png')}}"><label class="btn-next-label">Próximo</label> </button>
+			</div>
 		</div>
 		<div class="evaluatedHour" id="evaluatedHour">
 			Regra: <span id="rule-text">{{ruleTypes[rule]}}</span><br>
@@ -178,68 +206,70 @@
 
 			<h4>Condições:</h4>
 
-			<ul>
-			{% for key,value in conditions.items() %}
-				{%if value != 'None' %}
-				<span style="display:flex;">
-					<li>{{conditionTypes[key]}}: {{value}}</li>
-					<button name="btn" value="{{key}}" style="margin:auto; margin-left:15px; ">Excluir</button>
-				</span>
-				{%endif%}
-			{% endfor %}
-			</ul>
+				<ul>
+				{% for key,value in conditions.items() %}
+					{%if value != 'None' %}
+					<span style="display:flex;">
+						<li>{{conditionTypes[key]}}: {{value}}</li>
+						<button name="btn" value="{{key}}" style="margin:auto; margin-left:15px; ">Excluir</button>
+					</span>
+					{%endif%}
+				{% endfor %}
+				</ul>
 
 			<br>
-			<button class="button-newCondition" type="button" id="newConditionButton" onclick="controlState('new condition')">Adicionar Nova Condição</button>
-			
-			
+
+			<button id="newConditionButton" class="btn" type="button" onclick="controlState('new condition')"><img class="btn-icon" src="{{ url_for('static', filename='add_icon.png')}}"><label onclick="controlState('new condition')" class="btn-label"> Nova Condição</label></button>
+				
 			<div id="newConditionValueDiv">
 					<div class="newCondition">
-						<div>
+						<div class="condition-value">
 							<span  id="condition"></span> 
 							<div id="input-value">
 								<input type="number" name="conditionValue" id="conditionValue">
 							</div>
-							<div id="boolean-value">
+							<div class="input-value" id="boolean-value">
 								<input type="radio" name="presence" value="Sim"/>Sim
-								<input type="radio" name="presence" value="Sim"/>Não
+								<input type="radio" name="presence" value="Nao"/>Não
 							</div>
-							<div id="open-close">
+							<div class="input-value" id="open-close">
 								<input type="radio" name="magnet" value="Aberta"/>Aberta
 								<input type="radio" name="magnet" value="Fechada"/>Fechada
 							</div>
 						</div>
 						<br>
-						<div>
-							<button class="button-newCondition-back" type="button" onclick="controlState('new condition')">Voltar</button>
-							
-							<button class="button-newCondition" type="submit" name="btn" value="createCondition" >Adicionar Condição</button>
+						<div class="buttons">
+							<button class="btn" type="button" onclick="controlState('conditions')"><img class="btn-next-icon" src="{{ url_for('static', filename='back_icon.png')}}"><label class="btn-next-label">Voltar</label></button>
+							<button class="btn" type="submit" name="btn" value="createCondition" ><img class="btn-check-icon" src="{{ url_for('static', filename='check_icon.png')}}"><label class="btn-label">Adicionar Condição</label></button>
 							
 						</div>
 					</div>
 			</div>
 			<div class="newConditions" id="newConditionTypeDiv">
-				<span>Condição: 
-					<select name="conditionType" id="conditionTypeSelected">
-					{% for key,value in conditionTypes.items() %}
-						<option value="{{key}}">{{value}}</option>
-					{% endfor %}
-					</select>
-				</span>
-				<div>
-					<button class="button-newCondition-back" type="button" onclick="controlState('conditions')">Voltar</button>
-					<button class="button-newCondition-next" type="button" onclick="evaluateConditions({{rules}},{{ruleTypes}},{{conditions}},{{conditionTypes}})">Próximo</button>
+				<div class="condition-dropdown">
+					<span>Condição: </span>
+					<div class="dropdown">
+						<select name="conditionType" id="conditionTypeSelected">
+						{% for key,value in conditionTypes.items() %}
+							<option value="{{key}}">{{value}}</option>
+						{% endfor %}
+						</select>
+					</div>
+				</div>
+				<div class="buttons" style="margin-left: -10px">
+					<button class="btn" type="button" onclick="controlState('conditions')"><img class="btn-next-icon" src="{{ url_for('static', filename='back_icon.png')}}"><label style="margin-left:10px" class="btn-next-label">Voltar</label></button>
+					<button class="btn" type="button" onclick="evaluateConditions({{rules}},{{ruleTypes}},{{conditions}},{{conditionTypes}})"><img class="btn-next-icon" src="{{ url_for('static', filename='next_icon.png')}}"><label class="btn-next-label">Próximo</label> </button>
 				</div>
 			</div>
 		</div>	
 
 		<div id="newRuleButtonsDiv">
-			<button type="submit" name="btn" value="cancelCreateRule"> Cancelar </button>
-			<button type="submit" name="btn" value="createRule"> Criar Regra </button>
-		</form>
+			<button class="btn" type="submit" name="btn" value="cancelCreateRule"><img class="btn-icon" src="{{ url_for('static', filename='close_red.png')}}"><label class="btn-label">Cancelar</label></button>
+			<button class="btn" type="submit" name="btn" value="createRule"><img class="btn-check-icon	" src="{{ url_for('static', filename='check_icon.png')}}"><label class="btn-label">Criar Regra</label> </button>
 		</div>
+		</form>
 		
-		<button  class="button-newRule" id="newRuleButton" onclick="controlState('new rule')"> Adicionar Nova Regra </button> 
+		<button id="newRuleButton" class="btn" onclick="controlState('new rule')"><img class="btn-icon" src="{{ url_for('static', filename='add_icon.png')}}"><label class="btn-label"> Nova Regra</label></button>
 
 </body>
 </html>

@@ -57,6 +57,15 @@ function checkSameTime(rules,ruleTypes){
 function evaluateHour(rules,ruleTypes){
 
 	var selectedRule = document.getElementById('selectedRule').value;
+	var hourI = document.getElementById('hourI').value;
+	var hourE = document.getElementById('hourE').value;
+	var minI = document.getElementById('minI').value;
+	var minE = document.getElementById('minE').value;
+
+	if(hourI > 23 || hourE > 23 || minI > 59 || minE > 59){
+		alert("Por Favor Escolha um Horário Válido");
+		return
+	}
 
 	if(selectedRule == "controlTemperature"){
 		if(checkSameTime(rules,ruleTypes)){
@@ -71,7 +80,7 @@ function evaluateHour(rules,ruleTypes){
 	currentSelectedRule = selectedRule
 	document.getElementById('rule-text').innerHTML = ruleTypes[selectedRule]
 	document.getElementById('hourI-text').innerHTML = document.getElementById('hourI').value 
-	document.getElementById('hourE-text').innerHTML = document.getElementById('hourE').value
+	document.getElementById('minE-text').innerHTML = document.getElementById('hourE').value
 	document.getElementById('minI-text').innerHTML = document.getElementById('minI').value
 	document.getElementById('minE-text').innerHTML = document.getElementById('minE').value
 	controlState('conditions');

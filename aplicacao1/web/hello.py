@@ -18,6 +18,7 @@ def on_connect(client,userdata,flags,rc):
 
     client.subscribe("luminosityUpdt/#")
     client.subscribe("temperatureUpdt/#")
+    client.subscribe("presenceUpdt/#")
     client.subscribe("errorNode/#")
     client.subscribe("lightsUpdt")
     client.subscribe("configInit")
@@ -38,13 +39,18 @@ def on_message(client, userdata, message):
     if message.topic == "luminosityUpdt":
         luminosityUpdt = message.payload
         socketio.emit('luminosity', {'data': message.payload})
+
+    if message.topic == "luminosityUpdt":
+        presenceUpdt = message.payload
+        socketio.emit('luminosity', {'data': message.payload})
     
     if message.topic == "luminosityUpdt/error":
         errors[int(message.payload) - 1]["luminosity"] = True
+        socketio.emit('error',{'data': errors})
     
     if message.topic == "luminosityUpdt/fixed":
         errors[int(message.payload) - 1]["luminosity"] = False 
-        # socketio.emit('luminosity', {'data': message.payload})
+        socketio.emit('error',{'data': errors})
 
     if message.topic == "temperatureUpdt":
         temperatureUpdt = message.payload;
@@ -52,15 +58,19 @@ def on_message(client, userdata, message):
     
     if message.topic == "temperatureUpdt/error":
         errors[int(message.payload) - 1]["temperature"] = True
+        socketio.emit('error',{'data': errors})
     
     if message.topic == "temperatureUpdt/fixed":
         errors[int(message.payload) - 1]["temperature"] = False 
+        socketio.emit('error',{'data': errors})
 
     if message.topic == "errorNode":
         errors[int(message.payload) - 1]["total"] = True
+        socketio.emit('error',{'data': errors})
     
     if message.topic == "errorNode/fixed":
         errors[int(message.payload) - 1]["total"] = False
+        socketio.emit('error',{'data': errors})
 
     if message.topic == "airUpdt" :
         airUpdt = message.payload;
@@ -96,9 +106,10 @@ actions = {}
 actionTimer = {"nextTimer" : None, 'firstTime' : True}
 
 ruleTypes = {"lightsOn":"Acender Luzes", "controlTemperature": "Manter Temperatura"}
-conditionTypes = {"lowerBoundLight": "Luminosidade Abaixo De","upperBoundLight": "Luminosidade Acima De", "presence": "Existe Presenca", "door": "Porta", "window": "Janela"}
+conditionTypes = {"lowerBoundLight": "Luminosidade Abaixo De:","upperBoundLight": "Luminosidade Acima De:", "presence": "Existe Presenca:", "door": "Porta:", "window": "Janela:"}
 condition = {}
 conditions = {"lowerBoundLight": 'None',"upperBoundLight":'None', "presence":"None", "door":"None","window":"None"}
+conditionsLabels = {"Sim": "true", "Nao": "false", "Aberta":"open", "Fechada":"closed"}
 lightsUpdt = "off"
 lightsLabel = {"off" : "Apagadas", "on": "Acesas"}
 airUpdt = "off"
@@ -108,6 +119,7 @@ errors = [{"luminosity":False, "temperature":False, "total":False},{"luminosity"
 
 luminosityUpdt = 0
 temperatureUpdt = 0
+presenceUpdt = "False"
 temperatureParam = 22
 disabled = False
 
@@ -122,9 +134,6 @@ newRule = {
 	'type': 'None'
 }
 
-parentNodeDisabled = False
-
-
 templateData = {
 		'async_mode':socketio.async_mode,
 		'ruleTypes':ruleTypes,
@@ -133,6 +142,7 @@ templateData = {
 		'conditions':conditions,
 		'rules':rules,
 		'luminosity':luminosityUpdt,
+		'presence':presenceUpdt,
 		'air':airUpdt,
 		'lightsLabel': lightsLabel,
 		'airLabel': airLabel,
@@ -241,7 +251,7 @@ def getNextRuleTime():
 def createTimer():
 
 	global nextTime
-	totaltime = 0
+	totalTime = 0
 
 	print("ABOUT TO CREAT TIMER FOR NEXT TIME: "+ str(nextTime))
 
@@ -250,17 +260,20 @@ def createTimer():
 
 	now = datetime.now()
 	currentTime = hour_to_number(now.hour,now.minute)
-	print("Current time: "+ str(now.hour)+ "  " + str(now.minute))
+	print("Current time: "+ str(currentTime))
+	print("Current time minus next time" + str(nextTime-currentTime))
 
 	if(nextTime > currentTime):
-		totaltime = (nextTime-currentTime)*3600
-		
+		print("CALCULATING TOTAL TIME")
+		totalTime = (nextTime-currentTime)*3600.0
+
 	else:
+		print(str(((24-currentTime) + nextTime)*3600))
 		totalTime = ((24-currentTime) + nextTime)*3600
 
-	actionTimer["nextTimer"] = Timer(totaltime,executeTimer,[nextTime])
+	actionTimer["nextTimer"] = Timer(totalTime,executeTimer,[nextTime])
 	actionTimer["nextTimer"].start()
-	print("Created timer for: " + str(totaltime))
+	print("Created timer for: " + str(totalTime))
 
 def executeTimer(time):
 
@@ -318,7 +331,10 @@ def sendRule(rule):
 
 	for key,value in rule["parameters"].items():
 		if(value != 'None'):
-			ruleString = ruleString + str(key) + "=" + str(value) + ","
+			if(key == "door" or  key=="window" or key=="presence"):
+				ruleString = ruleString + str(key) + "=" + conditionsLabels[str(value)] + ","
+			else:
+				ruleString = ruleString + str(key) + "=" + str(value) + ","
 
 	ruleString = ruleString + '} }'
 
@@ -362,6 +378,8 @@ def new():
 	global templateData
 
 	btn = request.form['btn']
+
+	print("RECEIVED!!"+str(btn))
 
 	if(btn == 'conditionType'):
 		condition["label"] = ast.literal_eval(request.form.get('conditionType'))["label"]

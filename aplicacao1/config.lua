@@ -4,7 +4,7 @@ ERROR_LED = 1
 ip = nil
 
 MQTT_PORT = 1883
-MQTT_HOST = "192.168.1.6"
+MQTT_HOST = "192.168.1.3"
 
 -- Configure Wi-Fi
 wifi.setmode(wifi.STATION)

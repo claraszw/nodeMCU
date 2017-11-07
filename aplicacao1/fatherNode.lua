@@ -7,12 +7,13 @@ gpio.mode(AIR_LED,gpio.OUTPUT)
 gpio.mode(LIGHT_LED,gpio.OUTPUT)
 
 retry=true
+disabled = false
 
 sensorValues = {{},{}}
 countError = {{luminosity =  0, temperature = 0, total = 0},{luminosity =  0, temperature = 0, total = 0}}
 count = {temperature = 0, luminosity = 0}
 sum = {luminosity = 0, temperature = 0}
-parameterValue = {luminosity = 0, temperature = 0}
+parameterValue = {luminosity = 0, temperature = 0, presence = false, door = "closed", window = "closed"}
 lights = false
 airConditioning = false
 
@@ -56,6 +57,7 @@ function mqttConnect()
             mqttRegister('sensorInfo')
             mqttRegister('newRule')
             mqttRegister('delete')
+            mqttRegister('disabled')
             mqttPublish('configInit',ROOM)
             mqttPublish('request','sensorInfo')
             gpio.write(AIR_LED,gpio.LOW)
@@ -94,6 +96,13 @@ function messageReceived(topic,data)
 
         sensorValues[message.source] = message.info
 	-- print('Received luminosity value: '.. message['data'] .. 'from: '..message['source'])
+	elseif (topic == 'disabled') then
+		disabled = loadstring('return '..data)()
+		if disabled then
+			print("its true")
+		else
+			print("is false")
+		end
 
 	elseif (topic == 'newRule') then
     	message = loadstring('return'..data)()
@@ -186,8 +195,10 @@ function checkValues()
 
 	sum["luminosity"] = 0
 	sum["temperature"] = 0
+	sum["presence"] = 0
 	count["luminosity"] = 0
 	count["temperature"] = 0
+	count["presence"] = 0
 
 	for i,info in ipairs(sensorValues) do
 		if(next(info) ~= nil) then
@@ -197,6 +208,9 @@ function checkValues()
 			countError[i].total = 0
 			tableFunctions.checkValue["average"]("temperature",info,i)
 			tableFunctions.checkValue["average"]("luminosity",info,i)
+			tableFunctions.checkValue["boolean"]("presence",info,i)
+			tableFunctions.checkValue["open"]("door",info,i)
+			tableFunctions.checkValue["open"]("presence",info,i)
 			sensorValues[i] = {}
 		else
 			countError[i].total = countError[i].total + 1
@@ -209,9 +223,12 @@ function checkValues()
 
 	tableFunctions.calculateValue["average"]("temperature")
 	tableFunctions.calculateValue["average"]("luminosity")
+	tableFunctions.calculateValue["boolean"]("presence")
 
-	checkLights()
-	checkTemperature()
+	if not disabled then
+		checkLights()
+		checkTemperature()
+	end
 
 	tmr.create():alarm(delay/1000,tmr.ALARM_SINGLE, function()
 		 checkValues()

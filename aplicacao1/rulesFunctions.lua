@@ -46,14 +46,33 @@ rulesFunctions.checkParameter = {
 			return true
 		end
 	end,
+
 	lowerBoundLight = function(value)
 		if (parameterValue["luminosity"] ~= nil and parameterValue["luminosity"] < value) then
 			return true
 		end
 	end,
+
 	temperature = function (value)
 		return true
+	end,
+
+	presence = function (value)
+		if(value) then
+			return parameterValue["presence"]
+		else
+			return not parameterValue["presence"]
+		end
+	end,
+
+	window = function (value)
+		return parameterValue["window"] == value
+	end,
+
+	door = function (value)
+		return parameterValue["window"] == value
 	end
+
 }
 
 rulesFunctions.checkValue = {
@@ -75,6 +94,23 @@ rulesFunctions.checkValue = {
 				end
 			end
 		end	
+	end,
+
+	boolean = function(parameter,info,i)
+		if(info[parameter] ~=  nil) then
+			count[parameter] = count[parameter] + 1
+			if(info[parameter]) then
+				sum[parameter] = sum[parameter] + 1
+			end
+		end
+	end,
+
+	open = function(parameter,info)
+		if(info[parameter] ~= nil) then
+			if(info[parameter] == "open") then
+				parameterValue[parameter] = info[parameter]
+			end
+		end
 	end
 }
 
@@ -87,6 +123,19 @@ rulesFunctions.calculateValue = {
 		else
 			parameterValue[parameter] = nil
 		end
+	end,
+
+	boolean = function (parameter)
+		if count[parameter] > 0 then
+			if((sum[parameter]/count[parameter]) >= (count[parameter]/2)) then
+				parameterValue[parameter] = true
+			else
+				parameterValue[parameter] = false
+			end
+		else
+				parameterValue[parameter] = false
+		end
+		mqttPublish(parameter..'Updt',parameterValue[parameter])
 	end
 }
 
