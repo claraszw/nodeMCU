@@ -7,7 +7,7 @@ send = true
 retry = true 
 
 DHT11_PIN = 1
-ledErrorPin = 3
+-- ledErrorPin = 3
 PRESENCE_PIN = 2
 
 gpio.mode(DHT11_PIN, gpio.INPUT,gpio.PULLUP)
@@ -98,11 +98,11 @@ function getTemperature(pin)
 		print("DHT Temperature:" .. temp .. " ; Humidity:" .. humi .. "\r\n")
     	return temp
 	elseif status == dht.ERROR_CHECKSUM then
-		gpio.write(ledErrorPin,gpio.HIGH)
+		-- gpio.write(ledErrorPin,gpio.HIGH)
     	print( "DHT Checksum error." )
     	return "error"
 	elseif status == dht.ERROR_TIMEOUT then
-		gpio.write(ledErrorPin,gpio.HIGH)
+		-- gpio.write(ledErrorPin,gpio.HIGH)
     	print( "DHT timed out." )
     	return "error"
     end

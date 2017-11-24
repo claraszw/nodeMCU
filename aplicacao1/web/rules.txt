@@ -1,0 +1,1 @@
+{'endString': 'Ate: 00:00', 'beginString': 'De: 23:00', 'temperature': 0, 'parameters': {'lowerBoundLight': 'None', 'window': 'None', 'upperBoundLight': 150, 'door': 'None', 'presence': 'None'}, 'type': 'lightsOn', 'timeEnd': 0.0, 'timeBegin': 23.0}

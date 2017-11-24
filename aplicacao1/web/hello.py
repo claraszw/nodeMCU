@@ -40,9 +40,9 @@ def on_message(client, userdata, message):
         luminosityUpdt = message.payload
         socketio.emit('luminosity', {'data': message.payload})
 
-    if message.topic == "luminosityUpdt":
+    if message.topic == "presenceUpdt":
         presenceUpdt = message.payload
-        socketio.emit('luminosity', {'data': message.payload})
+        socketio.emit('presence', {'data': message.payload})
     
     if message.topic == "luminosityUpdt/error":
         errors[int(message.payload) - 1]["luminosity"] = True
@@ -82,8 +82,9 @@ def on_message(client, userdata, message):
         socketio.emit('lights', {'data': lightsLabel[message.payload]})
 
     if message.topic == "configInit":
-    	for rule in rules:
-    		checkRuleTime(rule,"send")
+		mqttc.publish('disabled',disabled)
+    	# for rule in rules:
+    		# checkRuleTime(rule,"send")
 
 
 # Rule Template = {
@@ -121,7 +122,7 @@ luminosityUpdt = 0
 temperatureUpdt = 0
 presenceUpdt = "False"
 temperatureParam = 22
-disabled = False
+disabled = "false"
 
 fileRules = open('rules.txt','r')
 
@@ -575,7 +576,8 @@ def handle_my_custom_event(json):
 
 @socketio.on('disabled')
 def toggleDisabled(message):
-	mqttc.publish('disabled',message)
+	disabled = message
+	mqttc.publish('disabled',disabled)
 	
 
 

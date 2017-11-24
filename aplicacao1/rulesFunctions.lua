@@ -42,19 +42,15 @@ rulesFunctions.rulesActions = {
 rulesFunctions.checkParameter = {
 	
 	upperBoundLight = function (value)
-		if (parameterValue["luminosity"] ~= nil and parameterValue["luminosity"] > value) then
-			return true
-		end
+		return parameterValue["luminosity"] ~= nil and parameterValue["luminosity"] > value)
 	end,
 
 	lowerBoundLight = function(value)
-		if (parameterValue["luminosity"] ~= nil and parameterValue["luminosity"] < value) then
-			return true
-		end
+		return parameterValue["luminosity"] ~= nil and parameterValue["luminosity"] < value
 	end,
 
 	temperature = function (value)
-		return true
+		return (parameterValue["temperature"] < (rule["temperature"] - 2)) or (parameterValue["temperature"] > (rule["temperature"]) + 2)
 	end,
 
 	presence = function (value)
@@ -135,7 +131,7 @@ rulesFunctions.calculateValue = {
 		else
 				parameterValue[parameter] = false
 		end
-		mqttPublish(parameter..'Updt',parameterValue[parameter])
+		mqttPublish(parameter..'Updt',tostring(parameterValue[parameter]))
 	end
 }
 

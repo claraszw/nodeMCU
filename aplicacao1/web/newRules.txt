@@ -1,1 +1,0 @@
-{'parameters': {'lowerBoundLight': 300, 'upperBoundLight': 'None'}, 'timeEnd': 11, 'timeBegin': 9, 'endString': 'Ate: 11:00', 'beginString': 'De 09:00', 'type': 'lightsOn'}{'endString': 'Ate: 11:00', 'beginString': 'De: 09:00', 'parameters': {'lowerBoundLight': 'None', 'upperBoundLight': 800}, 'type': 'lightsOff', 'timeEnd': 11, 'timeBegin': 9}

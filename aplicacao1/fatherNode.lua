@@ -153,13 +153,7 @@ function checkTemperature()
 	rule = rules["controlTemperature"][1]
 
 	if(act) then
-		if(parameterValue["temperature"] < (rule["temperature"] - 2)) then
-			tableFunctions.rulesActions["airOn"]()
-		elseif(temperatureValue > (rule["temperature"]) + 2) then
-			tableFunctions.rulesActions["airOn"]()
-		else
-			tableFunctions.rulesActions["airOff"]()
-		end
+		tableFunctions.rulesActions["airOn"]()
 	else
 		tableFunctions.rulesActions["airOff"]()
 	end
