@@ -4,11 +4,11 @@ ERROR_LED = 1
 ip = nil
 
 MQTT_PORT = 1883
-MQTT_HOST = "192.168.43.217"
+MQTT_HOST = "192.168.1.10"
 
 -- Configure Wi-Fi
 wifi.setmode(wifi.STATION)
-wifi.sta.config("G4_5931","12345678")
+wifi.sta.config("sadock","esquilovoador")
 
 while ip == nil do
 	if(count>5) then
@@ -16,7 +16,7 @@ while ip == nil do
 		break
 	end
 	wifi.sta.connect()
-	print("Connecting to G4")
+	print("Connecting to sadock")
 	ip = wifi.sta.getip()
 	tmr.delay(5000000)
 	count = count+1

@@ -101,11 +101,11 @@ function getTemperature(pin)
 		print("DHT Temperature:" .. temp .. " ; Humidity:" .. humi .. "\r\n")
     	return temp
 	elseif status == dht.ERROR_CHECKSUM then
-		gpio.write(ledErrorPin,gpio.HIGH)
+		-- gpio.write(ledErrorPin,gpio.HIGH)
     	print( "DHT Checksum error." )
     	return "error"
 	elseif status == dht.ERROR_TIMEOUT then
-		gpio.write(ledErrorPin,gpio.HIGH)
+		-- gpio.write(ledErrorPin,gpio.HIGH)
     	print( "DHT timed out." )
     	return "error"
     end

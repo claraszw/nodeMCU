@@ -1,0 +1,178 @@
+body { 
+
+	font-family: Century, sans-serif;
+	background: #fff;
+
+	margin: 2.5%;
+	margin-left: 50px;
+	margin-top: 50px;
+ }
+
+h3{
+	font-weight: 500;
+	color: #578FD6;
+}
+
+.rules-title{
+	margin-top: 50px;
+	font-size: 20px;
+	font-weight: normal;
+}
+
+.header{
+	display: flex;
+}
+
+.header button{
+	height: 40px;
+	margin-top: 20px;
+	width: 152px;
+	margin-left: 70px;
+}
+
+.header h1{
+	font-weight: normal;
+}
+
+.main-content{
+	margin-left: 20px;
+}
+
+ .dropdown select{
+   	width: 200px;
+   	margin-left: 10px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    padding: 2px 2px 2px 2px;
+    border: 1px solid #777;
+    border-radius:4px;
+    margin-top:-2px;
+    background: transparent url("http://cdn1.iconfinder.com/data/icons/cc_mono_icon_set/blacks/16x16/br_down.png") no-repeat 170px;
+ }
+
+ .rule-dropdown{
+ 	display: flex;
+ }
+
+ .condition-dropdown{
+ 	display: flex;
+ }
+
+ .rules{
+ 	display: flex;
+ }
+
+ .hour {
+ 	padding-top: 1.5%;
+ 	padding-bottom: 1.5%;
+ }
+
+.hour-input {
+	width: 40px;
+}
+
+.empty-label{
+	font-style: italic;
+	color: gray;
+	padding-left: 1%;
+}
+
+.conditions{
+	padding-bottom: 2%;
+}
+
+.buttons{
+	margin-top:20px;
+}
+
+.btn{
+	background-color: transparent;
+	border: transparent;
+}
+
+.btn label{
+	font-size: 18px;
+	font-weight: 300;
+}
+
+.btn-icon{
+	height: 30px;
+	cursor: pointer;
+	margin-right: 10px;
+}
+
+.btn-next-icon{
+	height: 30px;
+	cursor: pointer;
+}
+
+.btn-check-icon{
+	margin-right: 10px;
+	height: 40px;
+	margin-bottom:-7px;
+}
+
+.btn-label{
+	vertical-align: middle;
+	padding-bottom: 18px;
+	cursor: pointer;
+}
+
+.btn-next-label{
+	vertical-align: middle;
+	padding-bottom: 20px;
+	cursor: pointer;
+}
+
+.newCondition{
+	display: flex;
+	flex-direction: column
+}
+
+.condition-value{
+	display: flex;
+}
+
+.number-value, .input-value{
+	margin-left: 10px;
+	margin-top:-5px;
+}
+
+
+#evaluatedHour, #newRuleButtonsDiv{
+	display: none;
+}
+
+.hour input{
+	background: transparent;
+	border-bottom: 2px solid black;
+	border-top: 0px;
+	border-left: 0px;
+	border-right: 0px;
+	text-align: center;
+}
+
+#newRuleDiv, #conditionsDiv, #newConditionValueDiv, #newConditionTypeDiv, #hourDiv{
+	display: none;
+}
+
+#rule-text,#hourI-text,#hourE-text,#minI-text,#minE-text{
+	font-weight: bold;
+}
+
+.temperature{
+	margin-top: 3%;
+}
+
+.temperature input{
+	margin-left: 5px;
+	width: 70px;
+	-moz-appearance:textfield;
+}
+
+.errorLabel {
+	margin-top: 20px;
+	color: red;
+	font-weight: bold;
+}

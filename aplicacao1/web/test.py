@@ -1,5 +1,5 @@
 from flask import Flask
-from room514 import room514
+import room514
 from flask import Flask, render_template, request, redirect, url_for
 from flask_socketio import SocketIO, emit
 
@@ -11,8 +11,9 @@ socketio = SocketIO(app)
 if __name__ == '__main__':
 	socketio.run(app, host='0.0.0.0', port=8181, debug=True)
 
-app.register_blueprint(room514)
+# app.register_blueprint(room514.room514)
 
+print(room514.potato)
 
 @app.route('/')
 def hello():
