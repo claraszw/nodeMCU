@@ -75,12 +75,10 @@
       });
 
       socket.on('error', function(msg){
-        console.log("RECEIVED ERROR"+msg)
         var errorLabel = "";
         var errors = msg.data;
         for(i=0; i<errors.length; i++){
           var node = errors[i]
-          console.log("IN FOR" + node)
           if(node["total"]){
             errorLabel = errorLabel + "Erro no nó " + (i+1) + ". Nenhuma informação recebida. \ ";
           }

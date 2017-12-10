@@ -1,6 +1,6 @@
 
 
-NODE_ID = 1
+NODE_ID = 2
 delay = 5000000 --ms
 
 send = true

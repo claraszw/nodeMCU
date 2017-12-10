@@ -42,11 +42,11 @@ rulesFunctions.rulesActions = {
 rulesFunctions.checkParameter = {
 	
 	upperBoundLight = function (value)
-		return parameterValue["luminosity"] ~= nil and parameterValue["luminosity"] > value)
+		return parameterValue["luminosity"] and parameterValue["luminosity"] > value
 	end,
 
 	lowerBoundLight = function(value)
-		return parameterValue["luminosity"] ~= nil and parameterValue["luminosity"] < value
+		return parameterValue["luminosity"] and parameterValue["luminosity"] < value
 	end,
 
 	temperature = function (value)
@@ -123,7 +123,7 @@ rulesFunctions.calculateValue = {
 
 	boolean = function (parameter)
 		if count[parameter] > 0 then
-			if((sum[parameter]/count[parameter]) >= (count[parameter]/2)) then
+			if((count[parameter]/sum[parameter]) >= (count[parameter]/2)) then
 				parameterValue[parameter] = true
 			else
 				parameterValue[parameter] = false

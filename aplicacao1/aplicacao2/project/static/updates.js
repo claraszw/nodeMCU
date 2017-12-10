@@ -28,6 +28,8 @@ var currentSelectedCondition
 
 function checkSameTime(rules,ruleTypes){
 
+	console.log("in check same time")
+
 	var selectedRule = document.getElementById('selectedRule').value;
 	timeBegin = parseFloat(document.getElementById('hourI').value) + parseFloat(document.getElementById('minI').value/60) 
 	timeEnd = parseFloat(document.getElementById('hourE').value) + parseFloat(document.getElementById('minE').value/60)
@@ -56,6 +58,8 @@ function checkSameTime(rules,ruleTypes){
 
 function evaluateHour(rules,ruleTypes){
 
+	console.log("in evaluateHour");
+
 	var selectedRule = document.getElementById('selectedRule').value;
 	var hourI = document.getElementById('hourI').value;
 	var hourE = document.getElementById('hourE').value;
@@ -80,7 +84,7 @@ function evaluateHour(rules,ruleTypes){
 	currentSelectedRule = selectedRule
 	document.getElementById('rule-text').innerHTML = ruleTypes[selectedRule]
 	document.getElementById('hourI-text').innerHTML = document.getElementById('hourI').value 
-	document.getElementById('minE-text').innerHTML = document.getElementById('hourE').value
+	document.getElementById('hourE-text').innerHTML = document.getElementById('hourE').value
 	document.getElementById('minI-text').innerHTML = document.getElementById('minI').value
 	document.getElementById('minE-text').innerHTML = document.getElementById('minE').value
 	controlState('conditions');
@@ -88,6 +92,7 @@ function evaluateHour(rules,ruleTypes){
 
 
 function evaluateConditions(rules,ruleTypes,conditions,conditionTypes){
+
 	var value = document.getElementById('conditionTypeSelected').value
 	var selectedRule = document.getElementById('selectedRule').value;
 

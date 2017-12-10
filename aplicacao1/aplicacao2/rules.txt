@@ -1,1 +1,1 @@
-{'type': 'lightsOn', 'timeBegin': 20.0, 'timeEnd': 11.0, 'beginString': 'De: 20:00', 'endString': 'Ate: 11:00', 'temperature': 0, 'parameters': {'lowerBoundLight': 'None', 'upperBoundLight': 500, 'presence': 'None', 'door': 'None', 'window': 'None'}}
+{'type': 'lightsOn', 'timeBegin': 14.0, 'timeEnd': 15.0, 'beginString': 'De: 14:00', 'endString': 'Ate: 15:00', 'temperature': 0, 'parameters': {'lowerBoundLight': 300, 'upperBoundLight': 'None', 'presence': 'Sim', 'door': 'None', 'window': 'None'}}

@@ -13,7 +13,7 @@ gpio.write(ERROR_PIN,gpio.LOW)
 function run()
 	ip = dofile('config.lua')
 	if(ip ~= nil) then
-		dofile('childNode2.lua')
+		dofile('childNode1.lua')
 	else 
 		gpio.write(ERROR_PIN,gpio.HIGH)
 	end
