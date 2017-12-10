@@ -42,15 +42,15 @@ rulesFunctions.rulesActions = {
 rulesFunctions.checkParameter = {
 	
 	upperBoundLight = function (value)
-		return parameterValue["luminosity"] and parameterValue["luminosity"] > value
+		return (parameterValue["luminosity"] and parameterValue["luminosity"] > value)
 	end,
 
 	lowerBoundLight = function(value)
-		return parameterValue["luminosity"] and parameterValue["luminosity"] < value
+		return (parameterValue["luminosity"] and parameterValue["luminosity"] < value)
 	end,
 
 	temperature = function (value)
-		return (parameterValue["temperature"] < (rule["temperature"] - 2)) or (parameterValue["temperature"] > (rule["temperature"]) + 2)
+		return (parameterValue["temperature"] < (value - 2)) or (parameterValue["temperature"] > (value + 2))
 	end,
 
 	presence = function (value)
