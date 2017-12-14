@@ -125,9 +125,9 @@ actions = {}
 actionTimer = {"nextTimer" : None, 'firstTime' : True}
 
 ruleTypes = {"lightsOn":"Acender Luzes", "controlTemperature": "Manter Temperatura"}
-conditionTypes = {"lowerBoundLight": "Luminosidade Abaixo De:","upperBoundLight": "Luminosidade Acima De:", "presence": "Existe Presenca:", "door": "Porta:", "window": "Janela:"}
+conditionTypes = {"lowerBoundLight": "Luminosidade Abaixo De:","upperBoundLight": "Luminosidade Acima De:", "presence": "Existe Presenca:"}
 condition = {}
-conditions = {"lowerBoundLight": 'None',"upperBoundLight":'None', "presence":"None", "door":"None","window":"None"}
+conditions = {"lowerBoundLight": 'None',"upperBoundLight":'None', "presence":"None"}
 conditionsLabels = {"Sim": "true", "Nao": "false", "Aberta":"open", "Fechada":"closed"}
 lightsUpdt = "off"
 lightsLabel = {"off" : "Apagadas", "on": "Acesas"}

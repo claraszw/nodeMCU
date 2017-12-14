@@ -123,7 +123,7 @@ rulesFunctions.calculateValue = {
 
 	boolean = function (parameter)
 		if count[parameter] > 0 then
-			if((count[parameter]/sum[parameter]) >= (count[parameter]/2)) then
+			if(sum[parameter] >= (count[parameter]/2)) then
 				parameterValue[parameter] = true
 			else
 				parameterValue[parameter] = false

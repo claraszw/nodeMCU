@@ -9,3 +9,11 @@ Tornar a porta visível de fora:
 Setar python3 
 
 	alias python=python3
+
+
+
+Stop app:
+
+	ps aux | grep yourAppKeywords
+
+	kill processnum

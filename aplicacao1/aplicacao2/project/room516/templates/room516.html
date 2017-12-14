@@ -146,7 +146,7 @@
       <span class="empty-label">Não há Regras</span>
     {% else %}
       <form method = "POST" action="{{url_for('room516.deleteRule')}}">
-        <button name="btn" value="all" class="button-delete">Excluir Todas</button>
+        <button name="btn" value="all" class="btn"><img class="btn-next-icon" src="{{ url_for('static', filename='trash_can.png')}}"><label class="btn-next-label">Excluir Todas</label></button>
       </form>
     {% endif %}
 
@@ -163,7 +163,7 @@
           <ul>
             {% for key,value in rule["parameters"].items() %}
               {% if value != 'None' %}
-                <li>{{conditionTypes[key]}}: {{value}}</li>
+                <li>{{conditionTypes[key]}} {{value}}</li>
               {% endif %}
             {% endfor %}
           </ul>
@@ -215,8 +215,8 @@
           {% for key,value in conditions.items() %}
             {%if value != 'None' %}
             <span style="display:flex;">
-              <li>{{conditionTypes[key]}}: {{value}}</li>
-              <button name="btn" class="btn" value="{{key}}" style="margin-left: 10px; margin-top: -5px; "><img class="btn-next-icon" src="{{ url_for('static', filename='trash_can.png')}}"><label class="btn-next-label">Excluir</label></button>
+              <li>{{conditionTypes[key]}} {{value}}</li>
+              <button name="btn" class="btn" value="{{key}}" style="margin-left: 10px; margin-top: -5px; "><img class="btn-next-icon" src="{{ url_for('static', filename='trash_can.png')}}"><label class="btn-next-label">Excluir    </label></button>
             </span>
             {%endif%}
           {% endfor %}
